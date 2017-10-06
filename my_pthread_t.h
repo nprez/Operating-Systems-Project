@@ -23,9 +23,14 @@ typedef struct threadControlBlock {
 	/* add something here */
 } tcb; 
 
+enum mutex_status{
+	MUTEX_UNLOCKED,
+	MUTEX_LOCKED
+};
+
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
-	/* add something here */
+	mutex_status status;
 } my_pthread_mutex_t;
 
 /* define your data structures here: */
