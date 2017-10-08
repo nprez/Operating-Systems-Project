@@ -2,9 +2,9 @@
 // Author:	Yujie REN
 // Date:	09/23/2017
 
-// name:
-// username of iLab:
-// iLab Server:
+// name: Nicholas Prezioso, Benjamin Cahnbley, and Marcella Alvarez
+// username of iLab: njp107, bc499, and ma1143
+// iLab Server: prototype
 
 #include "my_pthread_t.h"
 
@@ -29,14 +29,15 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
+	mutex = malloc(sizeof(mutex));
+	mutex->status = malloc(sizeof(enum mutex_status));
+	mutex->status  = MUTEX_UNLOCKED;
 	return 0;
 };
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
-	while(mutex_status__sync_lock_test_and_set(mutex->status, MUTEX_LOCKED) == MUTEX_LOCKED){
-
-	}
+	while(mutex_status__sync_lock_test_and_set(mutex->status, MUTEX_LOCKED) == MUTEX_LOCKED);
 	return 0;
 };
 
@@ -48,6 +49,8 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
+	free(mutex->status);
+	free(mutex);
 	return 0;
 };
 

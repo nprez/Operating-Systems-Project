@@ -2,9 +2,9 @@
 // Author:	Yujie REN
 // Date:	09/23/2017
 
-// name:
-// username of iLab:
-// iLab Server: 
+// name: Nicholas Prezioso, Benjamin Cahnbley, and Marcella Alvarez
+// username of iLab: njp107, bc499, and ma1143
+// iLab Server: prototype
 #ifndef MY_PTHREAD_T_H
 #define MY_PTHREAD_T_H
 
@@ -18,6 +18,8 @@
 #include <stdlib.h>
 
 typedef uint my_pthread_t;
+
+//need macros to prevent sue of regular pthread adn mutex stuff
 
 typedef struct threadControlBlock {
 	/* add something here */
