@@ -21,8 +21,16 @@ typedef uint my_pthread_t;
 
 //need macros to prevent sue of regular pthread adn mutex stuff
 
+struct thread
+  {
+    my_pthread_t pid;                
+    enum thread_status status;         
+   //find out what to do for top of stack uint8_t *stack;     /* Saved stack pointer. */
+    int priority;                     
+  }
+
 typedef struct threadControlBlock {
-	/* add something here */
+	uint32_t *TStack
 } tcb; 
 
 enum mutex_status{
