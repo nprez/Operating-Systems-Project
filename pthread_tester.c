@@ -26,8 +26,9 @@ int main(){
 	my_pthread_t inc_x_thread;
 
 	/* create a second thread which executes inc_x(&x) */
-	if(my_pthread_create(&inc_x_thread, NULL, inc_x, &x)) {
-		fprintf(stderr, "Error creating thread\n");
+	int ret = my_pthread_create(&inc_x_thread, NULL, inc_x, &x);
+	if(ret != 0) {
+		fprintf(stderr, "Error creating thread\nError code: %d\n", ret);
 		return 1;
 	}
 	/* increment y to 100 in the first thread */
@@ -36,8 +37,9 @@ int main(){
 	printf("y increment finished\n");
 
 	/* wait for the second thread to finish */
-	if(my_pthread_join(inc_x_thread, NULL)) {
-		fprintf(stderr, "Error joining thread\n");
+	ret = my_pthread_join(inc_x_thread, NULL);
+	if(ret != 0) {
+		fprintf(stderr, "Error joining thread\nError Code: %d\n", ret);
 		return 2;
 	}
 
