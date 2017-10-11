@@ -9,8 +9,11 @@
 #include "my_pthread_t.h"
 
 /* create a new thread */
-int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) {
-	return 0;
+int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) 
+{
+  thread*  newThread =(thread*) malloc(sizeof(thread));
+  function(arg);
+  return 0;
 };
 
 /* give CPU pocession to other user level threads voluntarily */
