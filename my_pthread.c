@@ -19,16 +19,16 @@ static pid_t parentPid;
 static int numThreads = 0;
 
 void thread_init(){
-    int i;
+	int i;
 	for( i=0; i<MAX_THREADS; ++i ){
-        threadQ[i]->tid = -1;
+		threadQ[i]->tid = -1;
 		threadQ[i]->stack = -1;
 		threadQ[i]->status =THREAD_READY;
 		threadQ[i]->priority= 3;
 	}
-	
+
 	parentPid = getpid();
-	}
+}
 	
 
 /* create a new thread */
