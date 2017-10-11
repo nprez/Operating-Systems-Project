@@ -1,4 +1,4 @@
-#include <my_pthread.h>
+#include "my_pthread.c"
 #include <stdio.h>
 
 /* this function is run by the second thread */
