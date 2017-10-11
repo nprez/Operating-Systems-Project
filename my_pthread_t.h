@@ -28,7 +28,7 @@ enum thread_status{
 
 typedef uint my_pthread_t;
 
-//need macros to prevent sue of regular pthread adn mutex stuff
+//need macros to prevent use of regular pthread and mutex stuff
 
 typedef struct my_pthread_{
 	my_pthread_t tid;                
