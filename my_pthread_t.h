@@ -16,6 +16,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 enum thread_status
   {
@@ -38,7 +39,7 @@ typedef struct thread_
   }thread;
 
 typedef struct threadControlBlock {
-	uint32_t *TStack
+	uint32_t *TStack;
 } tcb; 
 
 enum mutex_status{
