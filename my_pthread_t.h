@@ -17,26 +17,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <ucontext.h>
 
-enum thread_status
-  {
-    THREAD_RUNNING,     /* Running thread. */
-    THREAD_READY,       /* Not running but ready to run. */
-    THREAD_BLOCKED,     /* Waiting for an event to trigger. */
-    THREAD_DYING        /* About to be destroyed. */
-  };
+enum thread_status{
+	THREAD_RUNNING,     /* Running thread. */
+	THREAD_READY,       /* Not running but ready to run. */
+	THREAD_BLOCKED,     /* Waiting for an event to trigger. */
+	THREAD_DYING        /* About to be destroyed. */
+};
 
 typedef uint my_pthread_t;
 
 //need macros to prevent sue of regular pthread adn mutex stuff
 
-typedef struct thread_
-  {
-    my_pthread_t pid;                
-    enum thread_status status;         
-   //find out what to do for top of stack uint8_t *stack;     /* Saved stack pointer. */
-    int priority;                     
-  }thread;
+typedef struct my_pthread_{
+	my_pthread_t tid;                
+	enum thread_status status;
+	ucontext_t* context;       
+	//find out what to do for top of stack uint8_t *stack;     /* Saved stack pointer. */
+	int priority;                     
+} my_pthread;
 
 typedef struct threadControlBlock {
 	uint32_t *TStack;

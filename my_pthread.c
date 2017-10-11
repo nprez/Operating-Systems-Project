@@ -8,12 +8,23 @@
 
 #include "my_pthread_t.h"
 
+
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) 
 {
-  thread*  newThread =(thread*) malloc(sizeof(thread));
-  function(arg);
-  return 0;
+	my_pthread* newThread = malloc(sizeof(thread));
+	ucontext_t* newContext = malloc(sizeof(ucontext_t));
+	char newStack[20000];	//not sure how big this should be
+	newContext->uc_stack.ss_sp = newStack;
+	newContext->uc_stack.ss_size = sizeof(newStack);
+	newContext->uc_link = NULL;
+	newThread->tid = *thread;
+	newThread->status = THREAD_READY;
+	newThread->priority = 1;	//not sure what the default should be
+	makecontext(newContext, *function, 1, arg);
+	newThread->context = newContext;
+	//put the new thread on the queue
+	return 0;
 };
 
 /* give CPU pocession to other user level threads voluntarily */
