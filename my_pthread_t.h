@@ -40,7 +40,7 @@ typedef struct my_pthread_{
 
 typedef struct threadControlBlock {
 	uint32_t *TStack;
-} tcb; 
+} tcb;
 
 enum mutex_status{
 	MUTEX_UNLOCKED,
@@ -48,23 +48,16 @@ enum mutex_status{
 };
 
 
- typedef struct{
- struct my_pthread *thisThread
- struct Node *next;
+ typedef struct node_{
+	struct my_pthread *thisThread
+ 	struct Node *next;
+ } node;
  
- }Node;
  
- 
- typedef struct{
-    Node *head;
-    Node *tail;
-    
-    
- } Queue; 
-  
-
-
-
+ typedef struct queue_{
+    node *head;
+    node *tail;
+ } queue;
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
