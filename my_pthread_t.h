@@ -34,7 +34,7 @@ typedef struct my_pthread_{
 	my_pthread_t tid;                
 	enum thread_status status;
 	ucontext_t* context;       
-	//find out what to do for top of stack uint8_t *stack;     /* Saved stack pointer. */
+	uint8_t *stack;
 	int priority;                     
 } my_pthread;
 
@@ -46,6 +46,25 @@ enum mutex_status{
 	MUTEX_UNLOCKED,
 	MUTEX_LOCKED
 };
+
+
+ typedef struct{
+ struct my_pthread *thisThread
+ struct Node *next;
+ 
+ }Node;
+ 
+ 
+ typedef struct{
+    Node *head;
+    Node *tail;
+    
+    
+ } Queue; 
+  
+
+
+
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
