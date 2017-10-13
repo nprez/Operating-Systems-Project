@@ -21,14 +21,6 @@ static pid_t parentPid;
 static int numThreads = 0;
 
 void thread_init(){
-	/*int i;
-	for( i=0; i<MAX_THREADS; ++i ){
-		threadQ[i]->tid = -1;
-		threadQ[i]->stack = -1;
-		threadQ[i]->status =THREAD_READY;
-		threadQ[i]->priority= 3;
-	}*/
-
 	parentPid = getpid();
 
 	queue1 = malloc(sizeof(queue));
@@ -41,7 +33,7 @@ void thread_init(){
 	queue3->head=NULL;
 	queue3->tail=NULL;
 }
-	
+
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) 
@@ -54,7 +46,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	newContext->uc_link = NULL;
 	newThread->tid = *thread;
 	newThread->status = THREAD_READY;
-	newThread->priority = 1;	//not sure what the default should be
+	newThread->priority = 3;
 	makecontext(newContext, *function, 1, arg);
 	newThread->context = newContext;
 	//put the new thread on the queue
