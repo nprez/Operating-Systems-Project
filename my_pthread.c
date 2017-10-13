@@ -2,8 +2,8 @@
 // Author:	Yujie REN
 // Date:	09/23/2017
 
-// name: Nicholas Prezioso, Benjamin Cahnbley, and Marcella Alvarez
-// username of iLab: njp107, bc499, and ma1143
+// name: Nicholas Prezioso and Marcella Alvarez
+// username of iLab: njp107 and ma1143
 // iLab Server: prototype
 
 #include "my_pthread_t.h"
@@ -59,14 +59,13 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	node* newNode = (node*)malloc(sizeof(node));
 	newNode->next = NULL;
 	newNode->thisThread = newThread;
-	if(queue3->head == NULL){
+	if(queue3->head == NULL)
 		queue3->head = newNode;
-		queue3->tail = newNode;
-	}
-	else{
+	
+	else
 		queue3->tail->next = newNode;
-		queue3->tail = newNode;
-	}
+	queue3->tail = newNode;
+	
 
 	return 0;
 };
