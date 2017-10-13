@@ -34,12 +34,12 @@ typedef struct my_pthread_{
 	my_pthread_t tid;                
 	enum thread_status status;
 	ucontext_t* context;       
-	uint8_t *stack;
+	uint8_t* stack;
 	int priority;                     
 } my_pthread;
 
 typedef struct threadControlBlock {
-	uint32_t *TStack;
+	uint32_t* TStack;
 } tcb;
 
 enum mutex_status{
@@ -49,14 +49,14 @@ enum mutex_status{
 
 
  typedef struct node_{
-	struct my_pthread *thisThread;
+	struct my_pthread* thisThread;
  	struct node_ *next;
  } node;
  
  
  typedef struct queue_{
-    node *head;
-    node *tail;
+    node* head;
+    node* tail;
  } queue;
 
 /* mutex struct definition */
