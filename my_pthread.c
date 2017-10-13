@@ -54,10 +54,15 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	node* newNode = (node*)malloc(sizeof(node)); 
 	newNode->next = NULL;
 	newNode->thisThread = newThread;
-	if(queue3->head == NULL)
+	if(queue3->head == NULL){
 	  queue3->head = newNode;
-	queue3->tail->next = newNode;
-	queue3->tail = newNode;
+	  queue3->tail = newNode;
+	}
+	else{
+		queue3->tail->next = newNode;
+		queue3->tail = newNode;
+	}
+	
 	return 0;
 };
 
