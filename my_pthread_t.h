@@ -50,7 +50,7 @@ enum mutex_status{
 
  typedef struct node_{
 	struct my_pthread *thisThread
- 	struct Node *next;
+ 	struct node_ *next;
  } node;
  
  

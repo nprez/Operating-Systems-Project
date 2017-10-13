@@ -10,24 +10,36 @@
 #define MAX_THREADS 101
 
 
-int thread_inited = 0;
+static int thread_inited = 0;
 /*Q Max for Threads*/
-static thread threadQ[MAX_THREADS];
+static queue* queue1;
+static queue* queue2;
+static queue* queue3;
 /* The pid of the parent process */
 static pid_t parentPid;
 /* The number of active threads */
 static int numThreads = 0;
 
 void thread_init(){
-	int i;
+	/*int i;
 	for( i=0; i<MAX_THREADS; ++i ){
 		threadQ[i]->tid = -1;
 		threadQ[i]->stack = -1;
 		threadQ[i]->status =THREAD_READY;
 		threadQ[i]->priority= 3;
-	}
+	}*/
 
 	parentPid = getpid();
+
+	queue1 = malloc(sizeof(queue));
+	queue1->head=NULL;
+	queue1->tail=NULL;
+	queue2 = malloc(sizeof(queue));
+	queue2->head=NULL;
+	queue2->tail=NULL;
+	queue3 = malloc(sizeof(queue));
+	queue3->head=NULL;
+	queue3->tail=NULL;
 }
 	
 
