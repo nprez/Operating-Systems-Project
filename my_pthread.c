@@ -49,7 +49,15 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	newThread->priority = 3;
 	makecontext(newContext, *function, 1, arg);
 	newThread->context = newContext;
-	//put the new thread on the queue
+
+	//Put the new thread on the highest priorty queue
+	node* newNode = (node*)malloc(sizeof(node)); 
+	newNode->next = NULL;
+	newNode->thisThread = newThread;
+	if(queue3->head == NULL)
+	  queue3->head = newNode;
+	queue3->tail->next = newNode;
+	queue3->tail = newNode;
 	return 0;
 };
 
