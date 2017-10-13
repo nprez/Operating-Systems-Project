@@ -38,6 +38,11 @@ void thread_init(){
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) 
 {
+	if(thread_inited=0){
+	thread_init();
+	thread_inited++;
+	}
+	
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
 	char newStack[20000];	//not sure how big this should be
