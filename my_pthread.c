@@ -259,8 +259,48 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
+  my_pthread* ptr = queue1->head;
+  int found = 0;
+  while(ptr != NULL)
+    {
+      if(ptr->thisThread.tid == thread)
+	{
+	  found = 1;
+	  break;
+	}
+      ptr = ptr->next;
+    }
+  if(found == 0)
+    {
+      ptr = queue2->head;
+      while(ptr != NULL)
+	{
+	  if(ptr->thisThread.tid == thread)
+	    {
+	      found = 1;
+	      break;
+	    }
+	  ptr = ptr->next;
+	}
+    }
+  if (found == 0)
+    {
+      ptr = queue3->head;
+      while(ptr != NULL)
+	{
+	  if(ptr->thisThread.tid == thread)
+	    {
+	      found = 1;
+	      break;
+	    }
+	  ptr = ptr->next;
+	}
+    }
 
-	return 0;
+  while(ptr->status != THREAD_DYING)
+    {}
+  (*value_ptr) = ptr->ret;
+  return 0;
 };
 
 /* initial the mutex lock */
