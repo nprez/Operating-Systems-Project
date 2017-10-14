@@ -197,7 +197,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	void* newStack = malloc(20000);	//not sure how big this should be
 	newContext->uc_stack.ss_sp = newStack;
 	newContext->uc_stack.ss_size = 20000;
-	//newContext->uc_link = &scheduler;
 	
 	__CRITICAL__ = 1;
 	ucontext_t* schedContext = malloc(sizeof(ucontext_t));
@@ -212,6 +211,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	newThread->tid = *thread;
 	newThread->status = THREAD_READY;
 	newThread->priority = 3;
+	newThread->ret = NULL;
 	makecontext(newContext, *function, 1, arg);
 	newThread->context = newContext;
 

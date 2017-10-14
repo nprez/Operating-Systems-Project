@@ -34,11 +34,12 @@ typedef uint my_pthread_t;
 //need macros to prevent use of regular pthread and mutex stuff
 
 typedef struct my_pthread_{
-	my_pthread_t tid;                
+	my_pthread_t tid;
 	enum thread_status status;
-	ucontext_t* context;       
+	ucontext_t* context;
 	uint8_t* stack;
-	int priority;                     
+	int priority;
+	void* ret;
 } my_pthread;
 
 typedef struct threadControlBlock {
