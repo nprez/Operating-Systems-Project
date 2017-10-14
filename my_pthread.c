@@ -24,7 +24,7 @@ static int __CRITICAL__ = 0;
 
 static my_pthread* current_thread = NULL;
 
-int enquene(thread* current_thread){
+int enquene(my_pthread* current_thread){
 
 	if(current_thread!=NULL){
             
