@@ -237,11 +237,16 @@ int my_pthread_yield() {
 };
 
 /* terminate a thread */
-void my_pthread_exit(void *value_ptr) {
+void my_pthread_exit(void *value_ptr) 
+{
+  current_thread->ret = value_ptr;
+  current_thread->status = THREAD_DYING;
 };
 
 /* wait for thread termination */
-int my_pthread_join(my_pthread_t thread, void **value_ptr) {
+int my_pthread_join(my_pthread_t thread, void **value_ptr) 
+{
+
 	return 0;
 };
 
