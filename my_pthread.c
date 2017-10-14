@@ -259,7 +259,7 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
 	__CRITICAL__ = 1;
 	while(mutex_status__sync_lock_test_and_set(mutex->status, MUTEX_LOCKED) == MUTEX_LOCKED);
-	CRITICAL__ = 0;
+	__CRITICAL__ = 0;
 	return 0;
 };
 
