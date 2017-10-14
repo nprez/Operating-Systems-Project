@@ -33,10 +33,8 @@ int enqueue(my_pthread* t){
 				node* newNode = (node*)malloc(sizeof(node));
 				newNode->next = NULL;
 				newNode->thisThread = t;
-				if(queue1->head == NULL){
+				if(queue1->head == NULL)
 					queue1->head = newNode;
-					queue1->tail = newNode;
-				}
 				else
 					queue1->tail->next = newNode;
 				queue1->tail = newNode;
@@ -47,10 +45,8 @@ int enqueue(my_pthread* t){
 				node* newNode = (node*)malloc(sizeof(node));
 				newNode->next = NULL;
 				newNode->thisThread = t;
-				if(queue2->head == NULL){
+				if(queue2->head == NULL)
 					queue2->head = newNode;
-					queue2->tail = newNode;
-				}
 				else
 					queue2->tail->next = newNode;
 				queue2->tail = newNode;
@@ -61,13 +57,11 @@ int enqueue(my_pthread* t){
 				node* newNode = (node*)malloc(sizeof(node));
 				newNode->next = NULL;
 				newNode->thisThread = t;
-				if(queue3->head == NULL){
+				if(queue3->head == NULL)
 					queue3->head = newNode;
-					queue3->tail = newNode;
-				}
 				else
 					queue3->tail->next = newNode;
-					queue3->tail = newNode;
+				queue3->tail = newNode;
 
 				break;
 			}
@@ -81,6 +75,8 @@ my_pthread* dequeue(){
     //dequeue a new thread to be run
 	if(queue3->head!=NULL){
 		node *temp = queue3->head;
+		if(queue3->tail==queue3->head)
+			queue3->tail=queue3->tail->next;
 		queue3->head = queue3->head->next;
 		my_pthread *dthread = temp->thisThread;
 		free(temp);
@@ -88,6 +84,8 @@ my_pthread* dequeue(){
 	}
 	else if(queue2->head!=NULL){
 		node *temp = queue2->head;
+		if(queue2->tail==queue2->head)
+			queue2->tail=queue2->tail->next;
 		queue2->head = queue2->head->next;
 		my_pthread *dthread = temp->thisThread;
 		free(temp);
@@ -95,6 +93,8 @@ my_pthread* dequeue(){
 	}
 	else if(queue1->head!=NULL){
 		node *temp = queue1->head;
+		if(queue1->tail==queue1->head)
+			queue1->tail=queue1->tail->next;
 		queue1->head = queue1->head->next;
 		my_pthread *dthread = temp->thisThread;
 		free(temp);
@@ -109,69 +109,10 @@ void scheduler(struct sigcontext *scp) {
 	__CRITICAL__ = 1;
 
 	//enqueue current_thread
-	if(current_thread!=NULL){
-		switch(current_thread->priority){
-			case 1:{
-				node* newNode = (node*)malloc(sizeof(node));
-				newNode->next = NULL;
-				newNode->thisThread = current_thread;
-				if(queue1->head == NULL)
-					queue1->head = newNode;
-				else
-					queue1->tail->next = newNode;
-				queue1->tail = newNode;
-
-				break;
-			}
-			case 2:{
-				node* newNode = (node*)malloc(sizeof(node));
-				newNode->next = NULL;
-				newNode->thisThread = current_thread;
-				if(queue2->head == NULL)
-					queue2->head = newNode;
-				else
-					queue2->tail->next = newNode;
-				queue2->tail = newNode;
-
-				break;
-			}
-			case 3:{
-				node* newNode = (node*)malloc(sizeof(node));
-				newNode->next = NULL;
-				newNode->thisThread = current_thread;
-				if(queue3->head == NULL)
-					queue3->head = newNode;
-				else
-					queue3->tail->next = newNode;
-				queue3->tail = newNode;
-
-				break;
-			}
-		}
-	}
+	enqueue(current_thread);
 	
 	//dequeue a new thread to be run
-	if(queue3->head!=NULL){
-		if(queue3->tail==queue3->head)
-			queue3->tail = queue3->tail->next;
-		current_thread=queue3->head->thisThread;
-		queue3->head = queue3->head->next;
-	}
-	else if(queue2->head!=NULL){
-		if(queue2->tail==queue2->head)
-			queue2->tail = queue2->tail->next;
-		current_thread=queue2->head->thisThread;
-		queue2->head = queue2->head->next;
-	}
-	else if(queue1->head!=NULL){
-		if(queue1->tail==queue1->head)
-			queue1->tail = queue1->tail->next;
-		current_thread=queue1->head->thisThread;
-		queue1->head = queue1->head->next;
-	}
-	else{
-		current_thread = NULL;
-	}
+	current_thread = dequeue();
 
 	//sigsetmask(scp->sc_mask); /* unblocks signal */
 	sigprocmask(SIG_SETMASK, scp->sc_mask, NULL);
