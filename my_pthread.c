@@ -63,7 +63,7 @@ int enqueue(my_pthread* t){
 					queue3->head = newNode;
 				else
 					queue3->tail->next = newNode;
-			  	queue3->tail = newNode;
+				queue3->tail = newNode;
 				break;
 			}
 		}
@@ -96,7 +96,7 @@ my_pthread* dequeue(){
 		__CRITICAL__ = 0;
 		return dthread;
 	}
- 	else if(queue1->head!=NULL){
+	else if(queue1->head!=NULL){
 		node *temp = queue1->head;
 		if(queue1->tail==queue1->head)
 			queue1->tail=queue1->tail->next;
@@ -259,48 +259,39 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
-  node* ptr = queue1->head;
-  int found = 0;
-  while(ptr != NULL)
-    {
-      if(ptr->thisThread->tid == thread)
-	{
-	  found = 1;
-	  break;
+	node* ptr = queue1->head;
+	int found = 0;
+	while(ptr != NULL){
+		if(ptr->thisThread->tid == thread){
+			found = 1;
+			break;
+		}
+		ptr = ptr->next;
 	}
-      ptr = ptr->next;
+	if(found == 0){
+		ptr = queue2->head;
+		while(ptr != NULL){
+			if(ptr->thisThread->tid == thread){
+				found = 1;
+				break;
+			}
+		ptr = ptr->next;
+		}
     }
-  if(found == 0)
-    {
-      ptr = queue2->head;
-      while(ptr != NULL)
-	{
-	  if(ptr->thisThread->tid == thread)
-	    {
-	      found = 1;
-	      break;
-	    }
-	  ptr = ptr->next;
+	if (found == 0){
+		ptr = queue3->head;
+		while(ptr != NULL){
+			if(ptr->thisThread->tid == thread){
+				found = 1;
+				break;
+			}
+		ptr = ptr->next;
+		}
 	}
-    }
-  if (found == 0)
-    {
-      ptr = queue3->head;
-      while(ptr != NULL)
-	{
-	  if(ptr->thisThread->tid == thread)
-	    {
-	      found = 1;
-	      break;
-	    }
-	  ptr = ptr->next;
-	}
-    }
 
-  while(ptr->thisThread->status != THREAD_DYING)
-    {}
-  (*value_ptr) = ptr->thisThread->ret;
-  return 0;
+	while(ptr->thisThread->status != THREAD_DYING){}
+	(*value_ptr) = ptr->thisThread->ret;
+	return 0;
 };
 
 /* initial the mutex lock */
@@ -315,9 +306,7 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
-	__CRITICAL__ = 1;
 	while(mutex_status__sync_lock_test_and_set(mutex->status, MUTEX_LOCKED) == MUTEX_LOCKED);
-	__CRITICAL__ = 0;
 	return 0;
 };
 
