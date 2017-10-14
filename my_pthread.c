@@ -259,11 +259,11 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
-  my_pthread* ptr = queue1->head;
+  node* ptr = queue1->head;
   int found = 0;
   while(ptr != NULL)
     {
-      if(ptr->thisThread.tid == thread)
+      if(ptr->thisThread->tid == thread)
 	{
 	  found = 1;
 	  break;
@@ -275,7 +275,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
       ptr = queue2->head;
       while(ptr != NULL)
 	{
-	  if(ptr->thisThread.tid == thread)
+	  if(ptr->thisThread->tid == thread)
 	    {
 	      found = 1;
 	      break;
@@ -288,7 +288,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
       ptr = queue3->head;
       while(ptr != NULL)
 	{
-	  if(ptr->thisThread.tid == thread)
+	  if(ptr->thisThread->tid == thread)
 	    {
 	      found = 1;
 	      break;
@@ -297,9 +297,9 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 	}
     }
 
-  while(ptr->status != THREAD_DYING)
+  while(ptr->thisThread->status != THREAD_DYING)
     {}
-  (*value_ptr) = ptr->ret;
+  (*value_ptr) = ptr->thisThread->ret;
   return 0;
 };
 
