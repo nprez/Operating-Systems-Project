@@ -19,6 +19,92 @@ static queue* queue3;
 static pid_t parentPid;
 /* The number of active threads */
 static int numThreads = 0;
+/*in scheduler or allocating memory*/
+static int __CRITICAL__ = 0;
+
+static my_pthread* current_thread = NULL;
+
+void scheduler(struct sigcontext *scp) {
+	__CRITICAL__ = 1;
+
+	//enqueue current_thread
+	if(current_thread!=NULL){
+		switch(current_thread->priority){
+			case 1:{
+				node* newNode = (node*)malloc(sizeof(node));
+				newNode->next = NULL;
+				newNode->thisThread = current_thread;
+				if(queue1->head == NULL)
+					queue1->head = newNode;
+				else
+					queue1->tail->next = newNode;
+				queue1->tail = newNode;
+
+				break;
+			}
+			case 2:{
+				node* newNode = (node*)malloc(sizeof(node));
+				newNode->next = NULL;
+				newNode->thisThread = current_thread;
+				if(queue2->head == NULL)
+					queue2->head = newNode;
+				else
+					queue2->tail->next = newNode;
+				queue2->tail = newNode;
+
+				break;
+			}
+			case 3:{
+				node* newNode = (node*)malloc(sizeof(node));
+				newNode->next = NULL;
+				newNode->thisThread = current_thread;
+				if(queue3->head == NULL)
+					queue3->head = newNode;
+				else
+					queue3->tail->next = newNode;
+				queue3->tail = newNode;
+
+				break;
+			}
+		}
+	}
+	
+	//dequeue a new thread to be run
+	if(queue3->head!=NULL){
+		if(queue3->tail==queue3->head)
+			queue3->tail = queue3->tail->next;
+		current_thread=queue3->head->thisThread;
+		queue3->head = queue3->head->next;
+	}
+	else if(queue2->head!=NULL){
+		if(queue2->tail==queue2->head)
+			queue2->tail = queue2->tail->next;
+		current_thread=queue2->head->thisThread;
+		queue2->head = queue2->head->next;
+	}
+	else if(queue1->head!=NULL){
+		if(queue1->tail==queue1->head)
+			queue1->tail = queue1->tail->next;
+		current_thread=queue1->head->thisThread;
+		queue1->head = queue1->head->next;
+	}
+	else{
+		current_thread = NULL;
+	}
+
+	//sigsetmask(scp->sc_mask); /* unblocks signal */
+	sigprocmask(SIG_SETMASK, scp->sc_mask, NULL);
+	__CRITICAL__ = 0; /* leaving scheduler */
+	
+	if(current_thread!=NULL)
+		setcontext(current_thread->context);
+}
+
+void interrupt_handler(int sig, int code, struct sigcontext *scp) {
+	/* check if the thread is in a critical section */
+	if (__CRITICAL__) { return; }
+	scheduler(scp);
+}
 
 void thread_init(){
 	parentPid = getpid();
@@ -32,6 +118,25 @@ void thread_init(){
 	queue3 = malloc(sizeof(queue));
 	queue3->head=NULL;
 	queue3->tail=NULL;
+
+	struct itimerval period;
+	struct sigaction sa;
+	/* set up interrupts interval and period */
+	period.it_value.tv_sec = 0;
+	period.it_value.tv_usec = 100000;
+	period.it_interval.tv_sec = 0;
+	period.it_interval.tv_usec = 100000;
+	/* setup alternative stack */
+	sa.sa_flags = SA_ONSTACK;
+	/* interrupt handler */
+	sa.sa_handler = interrupt_handler;
+	if (sigaction(SIGVTALRM, &sa, NULL) < 0){
+		/* error checking code */
+		return;
+	}
+	/* Setup signal delivery on separate stack */
+	sigaltstack(&old, &new);
+	setitimer(ITIMER_VIRTUAL, &period, NULL);
 }
 
 
@@ -43,7 +148,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	char newStack[20000];	//not sure how big this should be
 	newContext->uc_stack.ss_sp = newStack;
 	newContext->uc_stack.ss_size = sizeof(newStack);
-	newContext->uc_link = NULL;
+	newContext->uc_link = &scheduler;
 	newThread->tid = *thread;
 	newThread->status = THREAD_READY;
 	newThread->priority = 3;

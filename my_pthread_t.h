@@ -14,10 +14,12 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <ucontext.h>
+#include <signal.h>
 
 enum thread_status{
 	THREAD_RUNNING,     /* Running thread. */
@@ -49,7 +51,7 @@ enum mutex_status{
 
 
  typedef struct node_{
-	struct my_pthread* thisThread;
+	my_pthread* thisThread;
  	struct node_ *next;
  } node;
  
