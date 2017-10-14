@@ -170,8 +170,8 @@ void thread_init(){
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) 
 {
 	if(thread_inited=0){
-	thread_init();
-	thread_inited++;
+		thread_init();
+		thread_inited++;
 	}
 	
 	my_pthread* newThread = malloc(sizeof(my_pthread));
@@ -179,7 +179,16 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	void* newStack = malloc(20000);	//not sure how big this should be
 	newContext->uc_stack.ss_sp = newStack;
 	newContext->uc_stack.ss_size = 20000;
-	newContext->uc_link = &scheduler;
+	//newContext->uc_link = &scheduler;
+
+	ucontext_t* schedContext = malloc(sizeof(ucontext_t));
+	void* schedStack = malloc(20000);
+	schedContext->uc_stack.ss_sp = schedStack;
+	schedContext->uc_stack.ss_size = 20000;
+	schedContext->uc_link = NULL;
+
+	newContext->uc_link = schedContext;
+
 	newThread->tid = *thread;
 	newThread->status = THREAD_READY;
 	newThread->priority = 3;
