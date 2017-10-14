@@ -105,7 +105,8 @@ my_pthread* dequeue(){
 	}
 }
 
-void scheduler(struct sigcontext *scp) {
+//void scheduler(struct sigcontext *scp) {
+void scheduler() {
 	__CRITICAL__ = 1;
 
 	//enqueue current_thread
@@ -114,18 +115,24 @@ void scheduler(struct sigcontext *scp) {
 	//dequeue a new thread to be run
 	current_thread = dequeue();
 
-	//sigsetmask(scp->sc_mask); /* unblocks signal */
-	sigprocmask(SIG_SETMASK, scp->sc_mask, NULL);
+	//unblock the signal
+	sigset_t* set = malloc(sizeof(sigset_t));
+	sigemptyset (set);
+	sigaddset(set, SIGVTALRM);
+	sigprocmask(SIG_SETMASK, set, NULL);
+	free(set);
 	__CRITICAL__ = 0; /* leaving scheduler */
 	
 	if(current_thread!=NULL)
 		setcontext(current_thread->context);
 }
 
-void interrupt_handler(int sig, int code, struct sigcontext *scp) {
+//void interrupt_handler(int sig, int code, struct sigcontext *scp) {
+void interrupt_handler(int sig) {
 	/* check if the thread is in a critical section */
 	if (__CRITICAL__) { return; }
-	scheduler(scp);
+	//scheduler(scp);
+	scheduler();
 }
 
 void thread_init(){
