@@ -79,33 +79,33 @@ my_pthread* dequeue(){
 		if(queue3->tail==queue3->head)
 			queue3->tail=queue3->tail->next;
 		queue3->head = queue3->head->next;
-		my_pthread *dthread = temp->thisThread;
+		my_pthread *dqThread = temp->thisThread;
 		__CRITICAL__ = 1;
 		free(temp);
 		__CRITICAL__ = 0;
-		return dthread;
+		return dqThread;
 	}
 	else if(queue2->head!=NULL){
 		node *temp = queue2->head;
 		if(queue2->tail==queue2->head)
 			queue2->tail=queue2->tail->next;
 		queue2->head = queue2->head->next;
-		my_pthread *dthread = temp->thisThread;
+		my_pthread *dqThread = temp->thisThread;
 		__CRITICAL__ = 1;
 		free(temp);
 		__CRITICAL__ = 0;
-		return dthread;
+		return dqThread;
 	}
  	else if(queue1->head!=NULL){
 		node *temp = queue1->head;
 		if(queue1->tail==queue1->head)
 			queue1->tail=queue1->tail->next;
 		queue1->head = queue1->head->next;
-		my_pthread *dthread = temp->thisThread;
+		my_pthread *dqThread = temp->thisThread;
 		__CRITICAL__ = 1;
 		free(temp);
 		__CRITICAL__ = 0;
-		return dthread;
+		return dqThread;
 	}
 	else{
 		return NULL;
