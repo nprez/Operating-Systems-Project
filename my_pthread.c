@@ -136,7 +136,20 @@ void scheduler() {
 	sigaddset(set, SIGVTALRM);
 	sigprocmask(SIG_SETMASK, set, NULL);
 	free(set);
+
+	//change time slice based on priority
+	if(current_thread!=NULL){
+		struct itimerval period;
+		/* set up interrupts interval and period */
+		period.it_value.tv_sec = 0;
+		period.it_value.tv_usec = 100000*(4-current_thread->priority);
+		period.it_interval.tv_sec = 0;
+		period.it_interval.tv_usec = 100000*(4-current_thread->priority);
+		setitimer(ITIMER_VIRTUAL, &period, NULL);
+	}
+	
 	__CRITICAL__ = 0; /* leaving scheduler */
+	
 	if(current_thread!=NULL)
 		setcontext(current_thread->context);
 }
