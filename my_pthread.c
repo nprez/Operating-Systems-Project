@@ -277,8 +277,8 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 			}
 		ptr = ptr->next;
 		}
-    }
-	if (found == 0){
+	}
+	if(found == 0){
 		ptr = queue3->head;
 		while(ptr != NULL){
 			if(ptr->thisThread->tid == thread){
