@@ -30,7 +30,9 @@ int enqueue(my_pthread* t){
             
 		switch(t->priority){
 			case 1:{
+				__CRITICAL__ = 1;
 				node* newNode = (node*)malloc(sizeof(node));
+				__CRITICAL__ = 0;
 				newNode->next = NULL;
 				newNode->thisThread = t;
 				if(queue1->head == NULL)
@@ -42,7 +44,9 @@ int enqueue(my_pthread* t){
 				break;
 			}
 			case 2:{
+				__CRITICAL__ = 1;
 				node* newNode = (node*)malloc(sizeof(node));
+				__CRITICAL__ = 0;
 				newNode->next = NULL;
 				newNode->thisThread = t;
 				if(queue2->head == NULL)
@@ -54,7 +58,9 @@ int enqueue(my_pthread* t){
 				break;
 			}
 			case 3:{
+				__CRITICAL__ = 1;
 				node* newNode = (node*)malloc(sizeof(node));
+				__CRITICAL__ = 0;
 				newNode->next = NULL;
 				newNode->thisThread = t;
 				if(queue3->head == NULL)
@@ -79,7 +85,9 @@ my_pthread* dequeue(){
 			queue3->tail=queue3->tail->next;
 		queue3->head = queue3->head->next;
 		my_pthread *dthread = temp->thisThread;
+		__CRITICAL__ = 1;
 		free(temp);
+		__CRITICAL__ = 0;
 		return dthread;
 	}
 	else if(queue2->head!=NULL){
@@ -88,7 +96,9 @@ my_pthread* dequeue(){
 			queue2->tail=queue2->tail->next;
 		queue2->head = queue2->head->next;
 		my_pthread *dthread = temp->thisThread;
+		__CRITICAL__ = 1;
 		free(temp);
+		__CRITICAL__ = 0;
 		return dthread;
 	}
 	else if(queue1->head!=NULL){
@@ -97,7 +107,9 @@ my_pthread* dequeue(){
 			queue1->tail=queue1->tail->next;
 		queue1->head = queue1->head->next;
 		my_pthread *dthread = temp->thisThread;
+		__CRITICAL__ = 1;
 		free(temp);
+		__CRITICAL__ = 0;
 		return dthread;
 	}
 	else{
@@ -138,6 +150,7 @@ void interrupt_handler(int sig) {
 void thread_init(){
 	parentPid = getpid();
 
+	__CRITICAL__ = 1;
 	queue1 = malloc(sizeof(queue));
 	queue1->head=NULL;
 	queue1->tail=NULL;
@@ -147,6 +160,7 @@ void thread_init(){
 	queue3 = malloc(sizeof(queue));
 	queue3->head=NULL;
 	queue3->tail=NULL;
+	__CRITICAL__ = 0;
 
 	struct itimerval period;
 	struct sigaction sa;
@@ -164,10 +178,12 @@ void thread_init(){
 		return;
 	}
 	/* Setup signal delivery on separate stack */
+	__CRITICAL__ = 1;
 	stack_t* ss = malloc(sizeof(stack_t));
 	ss->ss_size=SIGSTKSZ;
 	ss->ss_flags = 0;
 	ss->ss_sp = malloc(sizeof(SIGSTKSZ));
+	__CRITICAL__ = 0;
 	sigaltstack(ss, NULL);
 	setitimer(ITIMER_VIRTUAL, &period, NULL);
 }
@@ -181,14 +197,18 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 		thread_inited++;
 	}
 	
+	__CRITICAL__ = 1;
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
+	__CRITICAL__ = 0;
 	void* newStack = malloc(20000);	//not sure how big this should be
 	newContext->uc_stack.ss_sp = newStack;
 	newContext->uc_stack.ss_size = 20000;
 	//newContext->uc_link = &scheduler;
 
+	__CRITICAL__ = 1;
 	ucontext_t* schedContext = malloc(sizeof(ucontext_t));
+	__CRITICAL__ = 0;
 	void* schedStack = malloc(20000);
 	schedContext->uc_stack.ss_sp = schedStack;
 	schedContext->uc_stack.ss_size = 20000;
@@ -203,7 +223,9 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	newThread->context = newContext;
 
 	//Put the new thread on the highest priorty queue
+	__CRITICAL__ = 1;
 	node* newNode = (node*)malloc(sizeof(node));
+	__CRITICAL__ = 0;
 	newNode->next = NULL;
 	newNode->thisThread = newThread;
 	if(queue3->head == NULL)
@@ -233,28 +255,36 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr) {
 
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
+	__CRITICAL__ = 1;
 	mutex = malloc(sizeof(mutex));
 	mutex->status = malloc(sizeof(enum mutex_status));
 	mutex->status  = MUTEX_UNLOCKED;
+	__CRITICAL__ = 0;
 	return 0;
 };
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
+	__CRITICAL__ = 1;
 	while(mutex_status__sync_lock_test_and_set(mutex->status, MUTEX_LOCKED) == MUTEX_LOCKED);
+	__CRITICAL__ = 0;
 	return 0;
 };
 
 /* release the mutex lock */
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
+	__CRITICAL__ = 1;
 	mutex_status__sync_lock_test_and_set(mutex->status, MUTEX_UNLOCKED);
+	__CRITICAL__ = 0;
 	return 0;
 };
 
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
+	__CRITICAL__ = 1;
 	free(mutex->status);
 	free(mutex);
+	__CRITICAL__ = 0;
 	return 0;
 };
 
