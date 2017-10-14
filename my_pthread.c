@@ -125,7 +125,12 @@ void scheduler() {
 		if(current_thread->ret != NULL)
 			free(current_thread->ret);
 		free(current_thread);
+		current_thread = NULL;
 	}
+
+	//running a time slice without finishing lowers your priority
+	if(current_thread != NULL && current_thread->priority>1)
+		current_thread->priority--;
 
 	//dequeue a new thread to be run
 	current_thread = dequeue();
@@ -137,7 +142,7 @@ void scheduler() {
 	sigprocmask(SIG_SETMASK, set, NULL);
 	free(set);
 
-	//change time slice based on priority
+	//change time slice based on priority; longer for lower priority threads
 	if(current_thread!=NULL){
 		struct itimerval period;
 		/* set up interrupts interval and period */
