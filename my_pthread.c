@@ -117,7 +117,15 @@ void scheduler() {
 	__CRITICAL__ = 1;
 
 	//enqueue current_thread
-	enqueue(current_thread);
+	if(current_thread->status != THREAD_DYING)
+		enqueue(current_thread);
+	else{
+		free(current_thread->context);
+		free(current_thread->stack);
+		if(current_thread->ret != NULL)
+			free(current_thread->ret);
+		free(current_thread);
+	}
 
 	//dequeue a new thread to be run
 	current_thread = dequeue();
@@ -138,6 +146,10 @@ void interrupt_handler(int sig) {
 	/* check if the thread is in a critical section */
 	if (__CRITICAL__) { return; }
 		scheduler();
+}
+
+void markDead(){
+	current_thread->status = THREAD_DYING;
 }
 
 void thread_init(){
@@ -193,20 +205,21 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	__CRITICAL__ = 1;
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
-	__CRITICAL__ = 0;
 	void* newStack = malloc(20000);	//not sure how big this should be
+	__CRITICAL__ = 0;
 	newContext->uc_stack.ss_sp = newStack;
 	newContext->uc_stack.ss_size = 20000;
 	
 	__CRITICAL__ = 1;
-	ucontext_t* schedContext = malloc(sizeof(ucontext_t));
+	ucontext_t* dyingContext = malloc(sizeof(ucontext_t));
+	void* dyingStack = malloc(20000);
 	__CRITICAL__ = 0;
-	void* schedStack = malloc(20000);
-	schedContext->uc_stack.ss_sp = schedStack;
-	schedContext->uc_stack.ss_size = 20000;
-	schedContext->uc_link = NULL;
+	dyingContext->uc_stack.ss_sp = dyingStack;
+	dyingContext->uc_stack.ss_size = 20000;
+	dyingContext->uc_link = NULL;
+	makecontext(dyingContext, markDead, 0);
 	
-	newContext->uc_link = schedContext;
+	newContext->uc_link = dyingContext;
 	
 	newThread->tid = *thread;
 	newThread->status = THREAD_READY;
@@ -239,8 +252,8 @@ int my_pthread_yield() {
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) 
 {
-  current_thread->ret = value_ptr;
-  current_thread->status = THREAD_DYING;
+	current_thread->ret = value_ptr;
+	current_thread->status = THREAD_DYING;
 };
 
 /* wait for thread termination */
