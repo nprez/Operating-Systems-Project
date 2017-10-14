@@ -246,11 +246,16 @@ int my_pthread_yield() {
 };
 
 /* terminate a thread */
-void my_pthread_exit(void *value_ptr) {
+void my_pthread_exit(void *value_ptr) 
+{
+  current_thread->ret = value_ptr;
+  current_thread->status = THREAD_DYING;
 };
 
 /* wait for thread termination */
-int my_pthread_join(my_pthread_t thread, void **value_ptr) {
+int my_pthread_join(my_pthread_t thread, void **value_ptr) 
+{
+
 	return 0;
 };
 
@@ -260,7 +265,7 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
   mutex = malloc(sizeof(mutex));
   mutex->status = malloc(sizeof(enum mutex_status));
   mutex->status  = MUTEX_UNLOCKED;
-	__CRITICAL__ = 0;
+  __CRITICAL__ = 0;
 	return 0;
 };
 
