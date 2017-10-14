@@ -2,8 +2,8 @@
 // Author:	Yujie REN
 // Date:	09/23/2017
 
-// name: Nicholas Prezioso and Marcella Alvarez
-// username of iLab: njp107 and ma1143
+// name: Nicholas Prezioso, Benjamin Cahnbley, and Marcella Alvarez
+// username of iLab: njp107, bc499, and ma1143
 // iLab Server: prototype
 #ifndef MY_PTHREAD_T_H
 #define MY_PTHREAD_T_H
