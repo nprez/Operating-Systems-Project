@@ -136,7 +136,6 @@ void thread_init(){
 	}
 	/* Setup signal delivery on separate stack */
 	stack_t* ss = malloc(sizeof(stack_t));
-	//sigaltstack* ss = malloc(sizeof(sigaltstack));
 	ss->ss_size=SIGSTKSZ;
 	ss->ss_flags = 0;
 	ss->ss_sp = malloc(sizeof(SIGSTKSZ));
@@ -155,9 +154,9 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
-	char newStack[20000];	//not sure how big this should be
+	void* newStack = malloc(20000);	//not sure how big this should be
 	newContext->uc_stack.ss_sp = newStack;
-	newContext->uc_stack.ss_size = sizeof(newStack);
+	newContext->uc_stack.ss_size = 20000;
 	newContext->uc_link = &scheduler;
 	newThread->tid = *thread;
 	newThread->status = THREAD_READY;
