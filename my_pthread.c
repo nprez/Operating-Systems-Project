@@ -108,7 +108,7 @@ my_pthread* dequene(){
 	}
 	else if(queue1->head!=NULL){
 	   node *temp = (node *) malloc(sizeof(node));
-        temp = queue1->head
+        temp = queue1->head;
         queue1->head = queue1->head->next;
         my_pthread *dthread = NULL;
 	dthread = temp->thisThread;
