@@ -18,8 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <ucontext.h>
+#include <sys/ucontext.h>
 #include <signal.h>
+//#include <asm/sigcontext.h>
 
 enum thread_status{
 	THREAD_RUNNING,     /* Running thread. */

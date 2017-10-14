@@ -135,7 +135,12 @@ void thread_init(){
 		return;
 	}
 	/* Setup signal delivery on separate stack */
-	sigaltstack(&old, &new);
+	stack_t* ss = malloc(sizeof(stack_t));
+	//sigaltstack* ss = malloc(sizeof(sigaltstack));
+	ss->ss_size=SIGSTKSZ;
+	ss->ss_flags = 0;
+	ss->ss_sp = malloc(sizeof(SIGSTKSZ));
+	sigaltstack(ss, NULL);
 	setitimer(ITIMER_VIRTUAL, &period, NULL);
 }
 
