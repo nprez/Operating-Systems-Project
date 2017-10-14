@@ -40,6 +40,7 @@ typedef struct my_pthread_{
 	uint8_t* stack;
 	int priority;
 	void* ret;
+	double runningTime;
 } my_pthread;
 
 typedef struct threadControlBlock {
