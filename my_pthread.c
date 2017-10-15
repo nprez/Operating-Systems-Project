@@ -316,8 +316,8 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	void* newStack = malloc(20000);	//not sure how big this should be
 	if(newStack==((void*)-1)){
 		//malloc failed
-	exit(EXIT_FAILURE);
-		}
+		exit(EXIT_FAILURE);
+	}
 	__CRITICAL__ = 0;
 	newContext->uc_stack.ss_sp = newStack;
 	newContext->uc_stack.ss_size = 20000;
@@ -327,8 +327,8 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	void* dyingStack = malloc(20000);
 	if(dyingStack==((void*)-1)){
 		//malloc failed
-	exit(EXIT_FAILURE);
-		}
+		exit(EXIT_FAILURE);
+	}
 	__CRITICAL__ = 0;
 	dyingContext->uc_stack.ss_sp = dyingStack;
 	dyingContext->uc_stack.ss_size = 20000;
