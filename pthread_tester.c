@@ -11,6 +11,7 @@ void *inc_x(void *x_void_ptr){
 	printf("x increment finished\n");
 
 	/* the function must return something - NULL will do */
+	printf(" In the end of the thread x: x: %d, y: %d\n", x, y);
 	return NULL;
 }
 
