@@ -331,7 +331,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
 	void* newStack = malloc(20000);	//not sure how big this should be
-	if(newStack==-1){
+	if(newStack==((void*)-1)){
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
@@ -342,7 +342,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	__CRITICAL__ = 1;
 	ucontext_t* dyingContext = malloc(sizeof(ucontext_t));
 	void* dyingStack = malloc(20000);
-	if(dyingStack==-1){
+	if(dyingStack==((void*)-1)){
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
