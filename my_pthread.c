@@ -305,7 +305,7 @@ void thread_init(){
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) 
 {
-	if(thread_inited=0){
+	if(thread_inited==0){
 		thread_init();
 		thread_inited++;
 	}
