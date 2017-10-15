@@ -245,7 +245,6 @@ void scheduler() {
 	}
 	
 	__CRITICAL__ = 0; /* leaving scheduler */
-	getcontext(current_thread->context);
 	if(current_thread!=NULL)
 		setcontext(current_thread->context);
 }
