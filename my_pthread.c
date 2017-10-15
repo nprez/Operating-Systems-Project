@@ -243,7 +243,7 @@ void scheduler() {
 	}
 	
 	__CRITICAL__ = 0; /* leaving scheduler */
-	
+	getcontext(current_thread->context);
 	if(current_thread!=NULL)
 		setcontext(current_thread->context);
 }
@@ -313,25 +313,25 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	__CRITICAL__ = 1;
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
-	void* newStack = malloc(20000);	//not sure how big this should be
+	void* newStack = malloc(1024 * 64);	//not sure how big this should be
 	if(newStack==((void*)-1)){
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
 	__CRITICAL__ = 0;
 	newContext->uc_stack.ss_sp = newStack;
-	newContext->uc_stack.ss_size = 20000;
+	newContext->uc_stack.ss_size = 1024 * 64;
 	
 	__CRITICAL__ = 1;
 	ucontext_t* dyingContext = malloc(sizeof(ucontext_t));
-	void* dyingStack = malloc(20000);
+	void* dyingStack = malloc(1024 * 64);
 	if(dyingStack==((void*)-1)){
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
 	__CRITICAL__ = 0;
 	dyingContext->uc_stack.ss_sp = dyingStack;
-	dyingContext->uc_stack.ss_size = 20000;
+	dyingContext->uc_stack.ss_size = 1024 * 64;
 	dyingContext->uc_link = NULL;
 	makecontext(dyingContext, markDead, 0);
 	
@@ -376,7 +376,7 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
-	node_t* t = NULL;
+  /*node_t* t = NULL;
 	int found = 0;
 	while(!found){
 		node_t* ptr = deadQueue;
@@ -389,7 +389,8 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 			ptr = ptr->next;
 		}
 	}
-	(*value_ptr) = t->ret;
+	(*value_ptr) = t->ret;*/
+  printf("pooop\n");
 	return 0;
 };
 
