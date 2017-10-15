@@ -138,7 +138,7 @@ void scheduler() {
 	__CRITICAL__ = 1;
 	int p = 3;
 	if (current_thread != NULL)
-	   p = current_thread->priority;
+	  int p = current_thread->priority;
 
 	//enqueue current_thread
 	enqueue(current_thread);
@@ -315,20 +315,25 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	__CRITICAL__ = 1;
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
-	void* newStack = malloc(20000);	//not sure how big this should be
+	void* newStack = malloc(64*1024);	//not sure how big this should be
 
+	if (getcontext(newContext) == -1){
+            perror("Error getting context: Could not get the new context\n");
+            exit(1);
+        }
+	
 	if(newStack==((void*)-1)){
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
 	__CRITICAL__ = 0;
 	newContext->uc_stack.ss_sp = newStack;
-	newContext->uc_stack.ss_size = 20000;
+	newContext->uc_stack.ss_size = 64*1024;
 	
 	__CRITICAL__ = 1;
 	ucontext_t* dyingContext = malloc(sizeof(ucontext_t));
-	void* dyingStack = malloc(20000);
-	newContext->uc_stack.ss_size = 20000;
+	void* dyingStack = malloc(64*1024);
+	newContext->uc_stack.ss_size = 64*1024;
 
 	if(dyingStack==((void*)-1)){
 		//malloc failed
@@ -336,7 +341,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 		}
 	__CRITICAL__ = 0;
 	dyingContext->uc_stack.ss_sp = dyingStack;
-	dyingContext->uc_stack.ss_size = 20000;
+	  dyingContext->uc_stack.ss_size = 64*1024;
 	dyingContext->uc_link = NULL;
 	getcontext(dyingContext);
 	makecontext(dyingContext, markDead, 0);
@@ -383,7 +388,7 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
-	node_t* t = NULL;
+  node_t* t = NULL;
 	int found = 0;
 	while(!found){
 		node_t* ptr = deadQueue;
@@ -397,7 +402,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 		}
 	}
 	(*value_ptr) = t->ret;
-	printf("pooop\n");
+  printf("pooop\n");
 	return 0;
 };
 
