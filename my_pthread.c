@@ -138,7 +138,7 @@ void scheduler() {
 	__CRITICAL__ = 1;
 	int p = 3;
 	if (current_thread != NULL)
-	  int p = current_thread->priority;
+	   p = current_thread->priority;
 
 	//enqueue current_thread
 	enqueue(current_thread);
