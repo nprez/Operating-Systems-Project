@@ -23,7 +23,9 @@ static int numThreads = 0;
 /*in scheduler or allocating memory*/
 static int __CRITICAL__ = 0;
 
+static ucontext_t mainContext;
 static my_pthread* current_thread = NULL;
+
 
 int enqueue(my_pthread* t){
 	if(t!=NULL){
@@ -135,11 +137,11 @@ my_pthread* dequeue(){
 void scheduler() {
 	__CRITICAL__ = 1;
 
-	int p = 3;
-	if (current_thread != NULL)
-	  p = current_thread->priority;
+	int p = current_thread->priority;
+
+	//enqueue current_thread
 	enqueue(current_thread);
-	if(current_thread != NULL && current_thread->status == THREAD_DYING)
+	if(current_thread->status == THREAD_DYING)
 		current_thread = NULL;
 
 	//running a time slice without finishing lowers your priority
@@ -313,25 +315,28 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	__CRITICAL__ = 1;
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
-	void* newStack = malloc(1024 * 64);	//not sure how big this should be
+	void* newStack = malloc(20000);	//not sure how big this should be
+
 	if(newStack==((void*)-1)){
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
 	__CRITICAL__ = 0;
 	newContext->uc_stack.ss_sp = newStack;
-	newContext->uc_stack.ss_size = 1024 * 64;
+	newContext->uc_stack.ss_size = 20000;
 	
 	__CRITICAL__ = 1;
 	ucontext_t* dyingContext = malloc(sizeof(ucontext_t));
-	void* dyingStack = malloc(1024 * 64);
+	void* dyingStack = malloc(20000);
+	newContext->uc_stack.ss_size = 20000;
+
 	if(dyingStack==((void*)-1)){
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
 	__CRITICAL__ = 0;
 	dyingContext->uc_stack.ss_sp = dyingStack;
-	dyingContext->uc_stack.ss_size = 1024 * 64;
+	  dyingContext->uc_stack.ss_size = 20000;
 	dyingContext->uc_link = NULL;
 	makecontext(dyingContext, markDead, 0);
 	
