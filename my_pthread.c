@@ -116,6 +116,8 @@ my_pthread* dequeue(){
 void scheduler() {
 	__CRITICAL__ = 1;
 
+	int p = current_thread->priority;
+
 	//enqueue current_thread
 	if(current_thread->status != THREAD_DYING)
 		enqueue(current_thread);
@@ -131,6 +133,111 @@ void scheduler() {
 	//running a time slice without finishing lowers your priority
 	if(current_thread != NULL && current_thread->priority>1)
 		current_thread->priority--;
+
+	node* ptr;
+	node* prev;
+	prev=NULL;
+	for(ptr=queue3->head; ptr!=NULL; prev=ptr, ptr=ptr->next){
+		ptr->thisThread->runningTime+=100000*(4-p);
+	}
+	prev=NULL;
+	for(ptr=queue2->head; ptr!=NULL; prev=ptr, ptr=ptr->next){
+		ptr->thisThread->runningTime+=100000*(4-p);
+		if(ptr->thisThread->runningTime>600000 && ptr->thisThread->priority<3){
+			ptr->thisThread->priority++;
+			ptr->thisThread->runningTime = 0;
+			//change queues
+			if(ptr==queue2->head){
+				if(queue2->head == queue2->tail){
+					queue2->tail = prev;
+					queue2->tail->next = NULL;
+				}
+				queue2->head = queue2->head->next;
+				ptr->next = NULL;
+				my_pthread* temp = malloc(sizeof(my_pthread));
+				temp = ptr->thisThread;
+				free(ptr->thisThread->context);
+				if(ptr->thisThread->ret != NULL)
+					free(ptr->thisThread->ret);
+				free(ptr->thisThread);
+				free(ptr);
+				enqueue(temp);
+			}
+			else if(ptr==queue2->tail){
+				queue2->tail = prev;
+				queue2->tail->next = NULL;
+				my_pthread* temp = malloc(sizeof(my_pthread));
+				temp = ptr->thisThread;
+				free(ptr->thisThread->context);
+				if(ptr->thisThread->ret != NULL)
+					free(ptr->thisThread->ret);
+				free(ptr->thisThread);
+				free(ptr);
+				enqueue(temp);
+			}
+			else{
+				prev->next = ptr->next;
+				ptr->next = NULL;
+				my_pthread* temp = malloc(sizeof(my_pthread));
+				temp = ptr->thisThread;
+				free(ptr->thisThread->context);
+				if(ptr->thisThread->ret != NULL)
+					free(ptr->thisThread->ret);
+				free(ptr->thisThread);
+				free(ptr);
+				enqueue(temp);
+			}
+		}
+	}
+	prev=NULL;
+	for(ptr=queue1->head; ptr!=NULL; prev=ptr, ptr=ptr->next){
+		ptr->thisThread->runningTime+=100000*(4-p);
+		if(ptr->thisThread->runningTime>600000 && ptr->thisThread->priority<3){
+			ptr->thisThread->priority++;
+			ptr->thisThread->runningTime = 0;
+			//change queues
+			if(ptr==queue1->head){
+				if(queue1->head == queue1->tail){
+					queue1->tail = prev;
+					queue1->tail->next = NULL;
+				}
+				queue1->head = queue1->head->next;
+				ptr->next = NULL;
+				my_pthread* temp = malloc(sizeof(my_pthread));
+				temp = ptr->thisThread;
+				free(ptr->thisThread->context);
+				if(ptr->thisThread->ret != NULL)
+					free(ptr->thisThread->ret);
+				free(ptr->thisThread);
+				free(ptr);
+				enqueue(temp);
+			}
+			else if(ptr==queue1->tail){
+				queue1->tail = prev;
+				queue1->tail->next = NULL;
+				my_pthread* temp = malloc(sizeof(my_pthread));
+				temp = ptr->thisThread;
+				free(ptr->thisThread->context);
+				if(ptr->thisThread->ret != NULL)
+					free(ptr->thisThread->ret);
+				free(ptr->thisThread);
+				free(ptr);
+				enqueue(temp);
+			}
+			else{
+				prev->next = ptr->next;
+				ptr->next = NULL;
+				my_pthread* temp = malloc(sizeof(my_pthread));
+				temp = ptr->thisThread;
+				free(ptr->thisThread->context);
+				if(ptr->thisThread->ret != NULL)
+					free(ptr->thisThread->ret);
+				free(ptr->thisThread);
+				free(ptr);
+				enqueue(temp);
+			}
+		}
+	}
 
 	//dequeue a new thread to be run
 	current_thread = dequeue();
@@ -243,6 +350,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	newThread->status = THREAD_READY;
 	newThread->priority = 3;
 	newThread->ret = NULL;
+	newThread->runningTime = 0;
 	makecontext(newContext, *function, 1, arg);
 	newThread->context = newContext;
 
