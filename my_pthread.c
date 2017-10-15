@@ -333,6 +333,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	dyingContext->uc_stack.ss_sp = dyingStack;
 	dyingContext->uc_stack.ss_size = 20000;
 	dyingContext->uc_link = NULL;
+	getcontext(dyingContext);
 	makecontext(dyingContext, markDead, 0);
 	
 	newContext->uc_link = dyingContext;
@@ -342,6 +343,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	newThread->priority = 3;
 	newThread->ret = NULL;
 	newThread->runningTime = 0;
+	getcontext(newContext);
 	makecontext(newContext, *function, 1, arg);
 	newThread->context = newContext;
 
