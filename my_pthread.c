@@ -318,9 +318,9 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	void* newStack = malloc(64*1024);	//not sure how big this should be
 
 	if (getcontext(newContext) == -1){
-            perror("Error getting context: Could not get the new context\n");
-            exit(1);
-        }
+		perror("Error getting context: Could not get the new context\n");
+		exit(1);
+	}
 	
 	if(newStack==((void*)-1)){
 		//malloc failed
@@ -388,7 +388,7 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
-  node_t* t = NULL;
+	node_t* t = NULL;
 	int found = 0;
 	while(!found){
 		node_t* ptr = deadQueue;
@@ -402,7 +402,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 		}
 	}
 	(*value_ptr) = t->ret;
-  printf("pooop\n");
+	printf("pooop\n");
 	return 0;
 };
 
