@@ -136,12 +136,13 @@ my_pthread* dequeue(){
 //void scheduler(struct sigcontext *scp) {
 void scheduler() {
 	__CRITICAL__ = 1;
-
-	int p = current_thread->priority;
+	int p = 3;
+	if (current_thread != NULL)
+	  int p = current_thread->priority;
 
 	//enqueue current_thread
 	enqueue(current_thread);
-	if(current_thread->status == THREAD_DYING)
+	if(current_thread != NULL && current_thread->status == THREAD_DYING)
 		current_thread = NULL;
 
 	//running a time slice without finishing lowers your priority
@@ -382,7 +383,7 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
-  /*node_t* t = NULL;
+  node_t* t = NULL;
 	int found = 0;
 	while(!found){
 		node_t* ptr = deadQueue;
@@ -395,7 +396,7 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 			ptr = ptr->next;
 		}
 	}
-	(*value_ptr) = t->ret;*/
+	(*value_ptr) = t->ret;
   printf("pooop\n");
 	return 0;
 };
