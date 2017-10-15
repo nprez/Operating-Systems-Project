@@ -15,6 +15,7 @@ static int thread_inited = 0;
 static queue* queue1;
 static queue* queue2;
 static queue* queue3;
+static node_t* deadQueue;
 /* The pid of the parent process */
 static pid_t parentPid;
 /* The number of active threads */
@@ -26,45 +27,63 @@ static my_pthread* current_thread = NULL;
 
 int enqueue(my_pthread* t){
 	if(t!=NULL){
-		switch(t->priority){
-			case 1:{
-				__CRITICAL__ = 1;
-				node* newNode = (node*)malloc(sizeof(node));
-				__CRITICAL__ = 0;
-				newNode->next = NULL;
-				newNode->thisThread = t;
-				if(queue1->head == NULL)
-					queue1->head = newNode;
-				else
-					queue1->tail->next = newNode;
-				queue1->tail = newNode;
-				break;
+		if(t->status == THREAD_DYING){
+			__CRITICAL__ = 1;
+			node_t* newNode = malloc(sizeof(node_t));
+			__CRITICAL__ = 0;
+			newNode->tid = t->tid;
+			newNode->next = NULL;
+			newNode->ret = t->ret;
+			if(deadQueue == NULL)
+				deadQueue = newNode;
+			else{
+				node_t* ptr = deadQueue;
+				while(ptr->next != NULL)
+					ptr = ptr->next;
+				ptr->next = newNode;
 			}
-			case 2:{
-				__CRITICAL__ = 1;
-				node* newNode = (node*)malloc(sizeof(node));
-				__CRITICAL__ = 0;
-				newNode->next = NULL;
-				newNode->thisThread = t;
-				if(queue2->head == NULL)
-					queue2->head = newNode;
-				else
-					queue2->tail->next = newNode;
-				queue2->tail = newNode;
-				break;
-			}
-			case 3:{
-				__CRITICAL__ = 1;
-				node* newNode = (node*)malloc(sizeof(node));
-				__CRITICAL__ = 0;
-				newNode->next = NULL;
-				newNode->thisThread = t;
-				if(queue3->head == NULL)
-					queue3->head = newNode;
-				else
-					queue3->tail->next = newNode;
-				queue3->tail = newNode;
-				break;
+		}
+		else{
+			switch(t->priority){
+				case 1:{
+					__CRITICAL__ = 1;
+					node* newNode = (node*)malloc(sizeof(node));
+					__CRITICAL__ = 0;
+					newNode->next = NULL;
+					newNode->thisThread = t;
+					if(queue1->head == NULL)
+						queue1->head = newNode;
+					else
+						queue1->tail->next = newNode;
+					queue1->tail = newNode;
+					break;
+				}
+				case 2:{
+					__CRITICAL__ = 1;
+					node* newNode = (node*)malloc(sizeof(node));
+					__CRITICAL__ = 0;
+					newNode->next = NULL;
+					newNode->thisThread = t;
+					if(queue2->head == NULL)
+						queue2->head = newNode;
+					else
+						queue2->tail->next = newNode;
+					queue2->tail = newNode;
+					break;
+				}
+				case 3:{
+					__CRITICAL__ = 1;
+					node* newNode = (node*)malloc(sizeof(node));
+					__CRITICAL__ = 0;
+					newNode->next = NULL;
+					newNode->thisThread = t;
+					if(queue3->head == NULL)
+						queue3->head = newNode;
+					else
+						queue3->tail->next = newNode;
+					queue3->tail = newNode;
+					break;
+				}
 			}
 		}
 	}
@@ -119,16 +138,9 @@ void scheduler() {
 	int p = current_thread->priority;
 
 	//enqueue current_thread
-	if(current_thread->status != THREAD_DYING)
-		enqueue(current_thread);
-	else{
-		free(current_thread->context);
-		free(current_thread->stack);
-		if(current_thread->ret != NULL)
-			free(current_thread->ret);
-		free(current_thread);
+	enqueue(current_thread);
+	if(current_thread->status == THREAD_DYING)
 		current_thread = NULL;
-	}
 
 	//running a time slice without finishing lowers your priority
 	if(current_thread != NULL && current_thread->priority>1)
@@ -154,36 +166,21 @@ void scheduler() {
 				}
 				queue2->head = queue2->head->next;
 				ptr->next = NULL;
-				my_pthread* temp = malloc(sizeof(my_pthread));
-				temp = ptr->thisThread;
-				free(ptr->thisThread->context);
-				if(ptr->thisThread->ret != NULL)
-					free(ptr->thisThread->ret);
-				free(ptr->thisThread);
+				my_pthread* temp = ptr->thisThread;
 				free(ptr);
 				enqueue(temp);
 			}
 			else if(ptr==queue2->tail){
 				queue2->tail = prev;
 				queue2->tail->next = NULL;
-				my_pthread* temp = malloc(sizeof(my_pthread));
-				temp = ptr->thisThread;
-				free(ptr->thisThread->context);
-				if(ptr->thisThread->ret != NULL)
-					free(ptr->thisThread->ret);
-				free(ptr->thisThread);
+				my_pthread* temp = ptr->thisThread;
 				free(ptr);
 				enqueue(temp);
 			}
 			else{
 				prev->next = ptr->next;
 				ptr->next = NULL;
-				my_pthread* temp = malloc(sizeof(my_pthread));
-				temp = ptr->thisThread;
-				free(ptr->thisThread->context);
-				if(ptr->thisThread->ret != NULL)
-					free(ptr->thisThread->ret);
-				free(ptr->thisThread);
+				my_pthread* temp = ptr->thisThread;
 				free(ptr);
 				enqueue(temp);
 			}
@@ -203,36 +200,21 @@ void scheduler() {
 				}
 				queue1->head = queue1->head->next;
 				ptr->next = NULL;
-				my_pthread* temp = malloc(sizeof(my_pthread));
-				temp = ptr->thisThread;
-				free(ptr->thisThread->context);
-				if(ptr->thisThread->ret != NULL)
-					free(ptr->thisThread->ret);
-				free(ptr->thisThread);
+				my_pthread* temp = ptr->thisThread;
 				free(ptr);
 				enqueue(temp);
 			}
 			else if(ptr==queue1->tail){
 				queue1->tail = prev;
 				queue1->tail->next = NULL;
-				my_pthread* temp = malloc(sizeof(my_pthread));
-				temp = ptr->thisThread;
-				free(ptr->thisThread->context);
-				if(ptr->thisThread->ret != NULL)
-					free(ptr->thisThread->ret);
-				free(ptr->thisThread);
+				my_pthread* temp = ptr->thisThread;
 				free(ptr);
 				enqueue(temp);
 			}
 			else{
 				prev->next = ptr->next;
 				ptr->next = NULL;
-				my_pthread* temp = malloc(sizeof(my_pthread));
-				temp = ptr->thisThread;
-				free(ptr->thisThread->context);
-				if(ptr->thisThread->ret != NULL)
-					free(ptr->thisThread->ret);
-				free(ptr->thisThread);
+				my_pthread* temp = ptr->thisThread;
 				free(ptr);
 				enqueue(temp);
 			}
@@ -290,6 +272,7 @@ void thread_init(){
 	queue3 = malloc(sizeof(queue));
 	queue3->head=NULL;
 	queue3->tail=NULL;
+	deadQueue = NULL;
 	__CRITICAL__ = 0;
 	
 	struct itimerval period;
@@ -393,38 +376,20 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
-	node* ptr = queue1->head;
+	node_t* t = NULL;
 	int found = 0;
-	while(ptr != NULL){
-		if(ptr->thisThread->tid == thread){
-			found = 1;
-			break;
-		}
-		ptr = ptr->next;
-	}
-	if(found == 0){
-		ptr = queue2->head;
-		while(ptr != NULL){
-			if(ptr->thisThread->tid == thread){
+	while(!found){
+		node_t* ptr = deadQueue;
+		while(ptr!=NULL){
+			if(ptr->tid == t->tid){
+				t = ptr;
 				found = 1;
 				break;
 			}
-		ptr = ptr->next;
+			ptr = ptr->next;
 		}
 	}
-	if(found == 0){
-		ptr = queue3->head;
-		while(ptr != NULL){
-			if(ptr->thisThread->tid == thread){
-				found = 1;
-				break;
-			}
-		ptr = ptr->next;
-		}
-	}
-
-	while(ptr->thisThread->status != THREAD_DYING){}
-	(*value_ptr) = ptr->thisThread->ret;
+	(*value_ptr) = t->ret;
 	return 0;
 };
 

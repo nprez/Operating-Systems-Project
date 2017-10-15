@@ -55,8 +55,14 @@ enum mutex_status{
 
  typedef struct node_{
 	my_pthread* thisThread;
- 	struct node_ *next;
+ 	struct node_* next;
  } node;
+
+ typedef struct node_t_{
+ 	my_pthread_t tid;
+ 	void* ret;
+ 	struct node_t_* next;
+ } node_t;
  
  
  typedef struct queue_{
