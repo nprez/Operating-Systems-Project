@@ -135,11 +135,11 @@ my_pthread* dequeue(){
 void scheduler() {
 	__CRITICAL__ = 1;
 
-	int p = current_thread->priority;
-
-	//enqueue current_thread
+	int p = 3;
+	if (current_thread != NULL)
+	  p = current_thread->priority;
 	enqueue(current_thread);
-	if(current_thread->status == THREAD_DYING)
+	if(current_thread != NULL && current_thread->status == THREAD_DYING)
 		current_thread = NULL;
 
 	//running a time slice without finishing lowers your priority
