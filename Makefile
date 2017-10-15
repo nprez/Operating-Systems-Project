@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -c
-AR = ar -rc
+AR = ar rc
 RANLIB = ranlib
 
 

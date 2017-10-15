@@ -440,14 +440,14 @@ int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *
 
 /* aquire the mutex lock */
 int my_pthread_mutex_lock(my_pthread_mutex_t *mutex) {
-	while(/*mutex_status*/__sync_lock_test_and_set(&(mutex->status), MUTEX_LOCKED) == MUTEX_LOCKED);
+	while(/*mutex_status*/__sync_lock_test_and_set((mutex->status), MUTEX_LOCKED) == MUTEX_LOCKED);
 	return 0;
 };
 
 /* release the mutex lock */
 int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 	__CRITICAL__ = 1;
-	/*mutex_status*/__sync_lock_test_and_set(&(mutex->status), MUTEX_UNLOCKED);
+	/*mutex_status*/__sync_lock_test_and_set((mutex->status), MUTEX_UNLOCKED);
 	__CRITICAL__ = 0;
 	return 0;
 };
