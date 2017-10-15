@@ -136,12 +136,13 @@ my_pthread* dequeue(){
 //void scheduler(struct sigcontext *scp) {
 void scheduler() {
 	__CRITICAL__ = 1;
-
-	int p = current_thread->priority;
+	int p = 3;
+	if (current_thread != NULL)
+	  int p = current_thread->priority;
 
 	//enqueue current_thread
 	enqueue(current_thread);
-	if(current_thread->status == THREAD_DYING)
+	if(current_thread != NULL && current_thread->status == THREAD_DYING)
 		current_thread = NULL;
 
 	//running a time slice without finishing lowers your priority
