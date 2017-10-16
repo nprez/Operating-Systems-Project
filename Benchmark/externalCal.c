@@ -6,72 +6,145 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <pthread.h>
 
-//#include "../my_pthread_t.h"
+#include "../my_pthread_t.h"
 
-#define THREAD_NUM 10
+#define DEFAULT_THREAD_NUM 2
 #define RAM_SIZE 160
 #define RECORD_NUM 10
 #define RECORD_SIZE 1024
 
 pthread_mutex_t   mutex;
 
-pthread_t thread[THREAD_NUM];
+int thread_num;
+
+int* counter;
+pthread_t *thread;
 
 int *mem = NULL;
 
 int sum = 0;
 
-int itr = RECORD_SIZE / (RAM_SIZE / THREAD_NUM);
+int itr = RECORD_SIZE / 16;
 
 void external_calculate(void* arg) {
-	int i = 0, j = 0;
+	int i = 0, j = 0, k = 0;
 	int n = *((int*) arg);
+
+	for (k = n; k < RECORD_NUM; k += thread_num) {
+
+		char a[3];
+		char path[20] = "./record/";
+
+		sprintf(a, "%d", k);
+		strcat(path, a);
+
+		FILE *f;
+		f = fopen(path, "r");
+		if (!f) {
+			printf("failed to open file %s, please run ./genRecord.sh first\n", path);
+			exit(0);
+		}
+
+		for (i = 0; i < itr; ++i) {
+			// read 16B from nth record into memory from mem[n*4]
+			for (j = 0; j < 4; ++j) {
+				fscanf(f, "%d", &mem[k*4 + j]);
+				pthread_mutex_lock(&mutex);
+				sum += mem[k*4 + j];
+				pthread_mutex_unlock(&mutex);
+			}
+		}
+		fclose(f);
+	}
+}
+
+void verify() {
+	int i = 0, j = 0, k = 0;
 
 	char a[3];
 	char path[20] = "./record/";
 
-	sprintf(a, "%d", n);
-	strcat(path, a);
+	sum = 0;
+	memset(mem, 0, RAM_SIZE);
 
-	int fd = open(path, O_RDONLY);
+	for (k = 0; k < 10; ++k) {
+		strcpy(path, "./record/");
+		sprintf(a, "%d", k);
+		strcat(path, a);
 
-	for (i = 0; i < itr; ++i) {
-		// read 16B from nth record into mem[n]
-		read(fd, mem + n*16, 16);
-		for (j = 0; j < 4; ++j) {
-			pthread_mutex_lock(&mutex);
-			sum += mem[n*16 + j];
-			pthread_mutex_unlock(&mutex);
+		FILE *f;
+		f = fopen(path, "r");
+		if (!f) {
+			printf("failed to open file %s, please run ./genRecord.sh first\n", path);
+			exit(0);
 		}
+
+		for (i = 0; i < itr; ++i) {
+			// read 16B from nth record into memory from mem[n*4]
+			for (j = 0; j < 4; ++j) {
+				fscanf(f, "%d\n", &mem[k*4 + j]);
+				sum += mem[k*4 + j];
+			}
+		}
+		fclose(f);
 	}
-	close(fd);
+
+	printf("verified sum is: %d\n", sum);
 }
 
+void sig_handler(int signum) {
+	printf("%d\n", signum);
+}
 
-int main() {
+int main(int argc, char **argv) {
 	int i = 0;
-	int counter[THREAD_NUM];
 
-	for (i = 0; i < THREAD_NUM; ++i)
+	if (argc == 1) {
+		thread_num = DEFAULT_THREAD_NUM;
+	} else {
+		if (argv[1] < 1) {
+			printf("enter a valid thread number\n");
+			return 0;
+		} else
+			thread_num = atoi(argv[1]);
+	}
+
+	// initialize counter
+	counter = (int*)malloc(thread_num*sizeof(int));
+	for (i = 0; i < thread_num; ++i)
 		counter[i] = i;
+
+	// initialize pthread_t
+	thread = (pthread_t*)malloc(thread_num*sizeof(pthread_t));
 
 	mem = (int*)malloc(RAM_SIZE);
 	memset(mem, 0, RAM_SIZE);
 
 	pthread_mutex_init(&mutex, NULL);
 
-	for (i = 0; i < THREAD_NUM; ++i)
+	for (i = 0; i < thread_num; ++i)
 		pthread_create(&thread[i], NULL, &external_calculate, &counter[i]);
 
-	for (i = 0; i < THREAD_NUM; ++i)
+	signal(SIGABRT, sig_handler);
+	signal(SIGSEGV, sig_handler);
+
+	for (i = 0; i < thread_num; ++i)
 		pthread_join(thread[i], NULL);
+
+	printf("sum is: %d\n", sum);
 
 	pthread_mutex_destroy(&mutex);
 
+	// feel free to verify your answer here:
+	verify();
+
 	free(mem);
+	free(thread);
+	free(counter);
 
 	return 0;
 }

@@ -5,18 +5,20 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <pthread.h>
+
 #include "../my_pthread_t.h"
 
 #define DEFAULT_THREAD_NUM 2
 
 #define VECTOR_SIZE 1000
 
-my_pthread_mutex_t   mutex;
+pthread_mutex_t   mutex;
 
 int thread_num;
 
 int* counter;
-my_pthread_t *thread;
+pthread_t *thread;
 
 int r[VECTOR_SIZE];
 int s[VECTOR_SIZE];
@@ -28,9 +30,9 @@ void vector_multiply(void* arg) {
 	int n = *((int*) arg);
 	
 	for (i = n; i < VECTOR_SIZE; i += thread_num) {
-		my_pthread_mutex_lock(&mutex);
+		pthread_mutex_lock(&mutex);
 		res += r[i] * s[i];
-		my_pthread_mutex_unlock(&mutex);		
+		pthread_mutex_unlock(&mutex);		
 	}
 }
 
@@ -40,7 +42,7 @@ void verify() {
 	for (i = 0; i < VECTOR_SIZE; i += 1) {
 		res += r[i] * s[i];	
 	}
-	printf("verified res is%d\n", res);
+	printf("verified res is: %d\n", res);
 }
 
 int main(int argc, char **argv) {
@@ -62,7 +64,7 @@ int main(int argc, char **argv) {
 		counter[i] = i;
 
 	// initialize pthread_t
-	thread = (my_pthread_t*)malloc(thread_num*sizeof(my_pthread_t));
+	thread = (pthread_t*)malloc(thread_num*sizeof(pthread_t));
 
 	// initialize data array
 	for (i = 0; i < VECTOR_SIZE; ++i) {
@@ -70,20 +72,20 @@ int main(int argc, char **argv) {
 		s[i] = i;
 	}
 
-	my_pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&mutex, NULL);
 
 	for (i = 0; i < thread_num; ++i)
-		my_pthread_create(&thread[i], NULL, &vector_multiply, &counter[i]);
+		pthread_create(&thread[i], NULL, &vector_multiply, &counter[i]);
 
 	for (i = 0; i < thread_num; ++i)
-		my_pthread_join(thread[i], NULL);
+		pthread_join(thread[i], NULL);
 
 	printf("res is: %d\n", res);
 
-	my_pthread_mutex_destroy(&mutex);
+	pthread_mutex_destroy(&mutex);
 
 	// feel free to verify your answer here:
-	// verify();
+	verify();
 
 	// Free memory on Heap
 	free(thread);
