@@ -7,36 +7,44 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "../my_pthread_t.h"
+#include <pthread.h>
+
+//#include "../my_pthread_t.h"
 
 #define THREAD_NUM 10
 #define RAM_SIZE 160
 #define RECORD_NUM 10
 #define RECORD_SIZE 1024
 
-my_pthread_mutex_t   mutex;
+pthread_mutex_t   mutex;
 
-int thread[THREAD_NUM];
+pthread_t thread[THREAD_NUM];
 
 int *mem = NULL;
 
 int sum = 0;
 
+int itr = RECORD_SIZE / (RAM_SIZE / THREAD_NUM);
+
 void external_calculate(void* arg) {
 	int i = 0, j = 0;
-	char *t_name = (char *) arg;
-	int n = atoi(t_name) - 1;
-	int itr = RECORD_SIZE / (RAM_SIZE / THREAD_NUM);
+	int n = *((int*) arg);
 
-	int fd = open(strcat("./record/", t_name), O_RDONLY);
+	char a[3];
+	char path[20] = "./record/";
+
+	sprintf(a, "%d", n);
+	strcat(path, a);
+
+	int fd = open(path, O_RDONLY);
 
 	for (i = 0; i < itr; ++i) {
 		// read 16B from nth record into mem[n]
 		read(fd, mem + n*16, 16);
-		for (j = 0; j < 40; ++j) {
-			my_pthread_mutex_lock(&mutex);
-			sum += mem[j];
-			my_pthread_mutex_unlock(&mutex);
+		for (j = 0; j < 4; ++j) {
+			pthread_mutex_lock(&mutex);
+			sum += mem[n*16 + j];
+			pthread_mutex_unlock(&mutex);
 		}
 	}
 	close(fd);
@@ -45,19 +53,25 @@ void external_calculate(void* arg) {
 
 int main() {
 	int i = 0;
-	char name[2];
-
-	mem = (int*)malloc(RAM_SIZE);
-	my_pthread_mutex_init(&mutex, NULL);
-
-	for (i = 0; i < THREAD_NUM; ++i) {
-		sprintf(name, "%d", i+1);
-		my_pthread_create(&thread[i], NULL, &external_calculate, name);
-	}
+	int counter[THREAD_NUM];
 
 	for (i = 0; i < THREAD_NUM; ++i)
-		my_pthread_join(thread[i], NULL);
+		counter[i] = i;
 
-	my_pthread_mutex_destroy(&mutex);
+	mem = (int*)malloc(RAM_SIZE);
+	memset(mem, 0, RAM_SIZE);
+
+	pthread_mutex_init(&mutex, NULL);
+
+	for (i = 0; i < THREAD_NUM; ++i)
+		pthread_create(&thread[i], NULL, &external_calculate, &counter[i]);
+
+	for (i = 0; i < THREAD_NUM; ++i)
+		pthread_join(thread[i], NULL);
+
+	pthread_mutex_destroy(&mutex);
+
+	free(mem);
+
 	return 0;
 }

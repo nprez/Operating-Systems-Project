@@ -31,6 +31,14 @@ enum thread_status{
 typedef uint my_pthread_t;
 
 //need macros to prevent use of regular pthread and mutex stuff
+/*#define pthread_create( w, x, y, z ) my_pthread_create( w, x, y, z )
+#define pthread_yield( ) my_pthread_yield( )
+#define pthread_exit( x ) my_pthread_exit( x )
+#define pthread_join( x, y ) my_pthread_join( x, y )
+#define pthread_mutex_init( x, y ) my_pthread_mutex_init( x, y )
+#define pthread_mutex_lock( x ) my_pthread_mutex_lock( x )
+#define pthread_mutex_unlock( x ) my_pthread_mutex_unlock( x )
+#define pthread_mutex_destroy( x ) my_pthread_mutex_destroy( x )*/
 
 typedef struct my_pthread_{
 	my_pthread_t tid;

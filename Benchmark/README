@@ -1,0 +1,11 @@
+parallelCal and vectorMultiply need you to specify thread number
+
+example 1 (using 4 user-level threads to calculate):
+
+$ ./parallelCal 4
+
+example 2 (using 2 user-level threads to calculate):
+
+$ ./vectorMutiply 2
+
+externalCal is not available now.
