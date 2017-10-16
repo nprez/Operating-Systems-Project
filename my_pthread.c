@@ -7,8 +7,6 @@
 // iLab Server: prototype
 
 #include "my_pthread_t.h"
-#define MAX_THREADS 101
-
 
 static int thread_inited = 0;
 /*Q Max for Threads*/
@@ -18,14 +16,10 @@ static queue* queue3;
 static node_t* deadQueue;
 /* The pid of the parent process */
 static pid_t parentPid;
-/* The number of active threads */
-static int numThreads = 0;
 /*in scheduler or allocating memory*/
 static int __CRITICAL__ = 0;
 
-static ucontext_t mainContext;
 static my_pthread* current_thread = NULL;
-
 
 void enqueue(my_pthread* t){
 	if(t!=NULL){
@@ -91,8 +85,6 @@ void enqueue(my_pthread* t){
 	}
 }
 
-
-
 my_pthread* dequeue(){
 	//dequeue a new thread to be run
 	if(queue3->head!=NULL){
@@ -133,7 +125,6 @@ my_pthread* dequeue(){
 	}
 }
 
-//void scheduler(struct sigcontext *scp) {
 void scheduler() {
 	__CRITICAL__ = 1;
 	int p = 3;
@@ -250,7 +241,6 @@ void scheduler() {
 		setcontext(current_thread->context);
 }
 
-//void interrupt_handler(int sig, int code, struct sigcontext *scp) {
 void interrupt_handler(int sig) {
 	/* check if the thread is in a critical section */
 	if (__CRITICAL__) { return; }

@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <sys/ucontext.h>
 #include <signal.h>
-//#include <asm/sigcontext.h>
 
 enum thread_status{
 	THREAD_RUNNING,     /* Running thread. */
@@ -37,14 +36,13 @@ typedef struct my_pthread_{
 	my_pthread_t tid;
 	enum thread_status status;
 	ucontext_t* context;
-	uint8_t* stack;
 	int priority;
 	void* ret;
 	long double runningTime;
 } my_pthread;
 
 typedef struct threadControlBlock {
-	uint32_t* TStack;
+
 } tcb;
 
 enum mutex_status{
