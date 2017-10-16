@@ -27,7 +27,7 @@ static ucontext_t mainContext;
 static my_pthread* current_thread = NULL;
 
 
-int enqueue(my_pthread* t){
+void enqueue(my_pthread* t){
 	if(t!=NULL){
 		if(t->status == THREAD_DYING){
 			__CRITICAL__ = 1;
@@ -259,6 +259,7 @@ void interrupt_handler(int sig) {
 
 void markDead(){
 	current_thread->status = THREAD_DYING;
+	scheduler();
 }
 
 void thread_init(){
@@ -384,12 +385,25 @@ void my_pthread_exit(void *value_ptr)
 /* wait for thread termination */
 int my_pthread_join(my_pthread_t thread, void **value_ptr) 
 {
+	__CRITICAL__ = 1;
+	//put this context in the queue to return later
+	my_pthread* this = malloc(sizeof(my_pthread));
+	this->tid = -1;
+	this->status = THREAD_READY;
+	this->context = malloc(sizeof(ucontext_t));
+	getcontext(this->context);
+	this->priority = 3;
+	this->ret = NULL;
+	this->runningTime = 0;
+	enqueue(this);
+	__CRITICAL__ = 0;
+
 	node_t* t = NULL;
 	int found = 0;
 	while(!found){
 		node_t* ptr = deadQueue;
 		while(ptr!=NULL){
-			if(ptr->tid == t->tid){
+			if(ptr->tid == thread){
 				t = ptr;
 				found = 1;
 				break;
@@ -397,7 +411,8 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 			ptr = ptr->next;
 		}
 	}
-	(*value_ptr) = t->ret;
+	if(value_ptr != NULL)
+		(*value_ptr) = t->ret;
 	printf("pooop\n");
 	return 0;
 };
