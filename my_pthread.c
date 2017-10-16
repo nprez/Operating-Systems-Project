@@ -419,7 +419,6 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 /* initial the mutex lock */
 int my_pthread_mutex_init(my_pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr) {
 	__CRITICAL__ = 1;
-	mutex = malloc(sizeof(my_pthread_mutex_t));
 	mutex->status = MUTEX_UNLOCKED;
 	__CRITICAL__ = 0;
 	return 0;
