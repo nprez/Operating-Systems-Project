@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "my_pthread.h"
+#include "my_pthread_t.h"
 
 #define DEFAULT_THREAD_NUM 4
 
