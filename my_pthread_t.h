@@ -72,7 +72,7 @@ enum mutex_status{
 
 /* mutex struct definition */
 typedef struct my_pthread_mutex_t {
-	enum mutex_status* status;
+	enum mutex_status status;
 } my_pthread_mutex_t;
 
 /* define your data structures here: */

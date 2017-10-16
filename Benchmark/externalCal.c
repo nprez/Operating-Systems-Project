@@ -48,6 +48,7 @@ int main() {
 	char name[2];
 
 	mem = (int*)malloc(RAM_SIZE);
+	my_pthread_mutex_init(&mutex, NULL);
 
 	for (i = 0; i < THREAD_NUM; ++i) {
 		sprintf(name, "%d", i+1);
@@ -57,5 +58,6 @@ int main() {
 	for (i = 0; i < THREAD_NUM; ++i)
 		my_pthread_join(thread[i], NULL);
 
+	my_pthread_mutex_destroy(&mutex);
 	return 0;
 }
