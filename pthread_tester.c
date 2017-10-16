@@ -37,8 +37,10 @@ int main(){
 	printf("y increment finished\n");
 
 	/* wait for the second thread to finish */
-		printf(" In the end of the thread x: x: %d, y: %d\n", x, y);
+	printf(" In the end of the thread: x: %d, y: %d\n", x, y);
 	ret = my_pthread_join(inc_x_thread, NULL);
+	printf(" In the end of the thread: x: %d, y: %d\n", x, y);
+	
 	if(ret != 0) {
 		fprintf(stderr, "Error joining thread\nError Code: %d\n", ret);
 		return 2;
