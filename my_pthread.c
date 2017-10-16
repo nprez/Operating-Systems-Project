@@ -262,9 +262,9 @@ void markDead(){
 }
 
 void thread_init(){
+	__CRITICAL__ = 1;
 	parentPid = getpid();
 	
-	__CRITICAL__ = 1;
 	queue1 = malloc(sizeof(queue));
 	queue1->head=NULL;
 	queue1->tail=NULL;
@@ -275,7 +275,6 @@ void thread_init(){
 	queue3->head=NULL;
 	queue3->tail=NULL;
 	deadQueue = NULL;
-	__CRITICAL__ = 0;
 	
 	struct itimerval period;
 	struct sigaction sa;
@@ -293,26 +292,25 @@ void thread_init(){
 		return;
 	}
 	/* Setup signal delivery on separate stack */
-	__CRITICAL__ = 1;
 	stack_t* ss = malloc(sizeof(stack_t));
 	ss->ss_size=SIGSTKSZ;
 	ss->ss_flags = 0;
 	ss->ss_sp = malloc(sizeof(SIGSTKSZ));
-	__CRITICAL__ = 0;
 	sigaltstack(ss, NULL);
 	setitimer(ITIMER_VIRTUAL, &period, NULL);
+	__CRITICAL__ = 0;
 }
 
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg) 
 {
+	__CRITICAL__ = 1;
 	if(thread_inited==0){
 		thread_init();
 		thread_inited++;
 	}
 
-	__CRITICAL__ = 1;
 	my_pthread* newThread = malloc(sizeof(my_pthread));
 	ucontext_t* newContext = malloc(sizeof(ucontext_t));
 	void* newStack = malloc(64*1024);	//not sure how big this should be
@@ -326,11 +324,9 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
-	__CRITICAL__ = 0;
 	newContext->uc_stack.ss_sp = newStack;
 	newContext->uc_stack.ss_size = 64*1024;
 	
-	__CRITICAL__ = 1;
 	ucontext_t* dyingContext = malloc(sizeof(ucontext_t));
 	void* dyingStack = malloc(64*1024);
 	newContext->uc_stack.ss_size = 64*1024;
@@ -339,7 +335,6 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 		//malloc failed
 	exit(EXIT_FAILURE);
 		}
-	__CRITICAL__ = 0;
 	dyingContext->uc_stack.ss_sp = dyingStack;
 	  dyingContext->uc_stack.ss_size = 64*1024;
 	dyingContext->uc_link = NULL;
@@ -358,9 +353,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 	newThread->context = newContext;
 
 	//Put the new thread on the highest priorty queue
-	__CRITICAL__ = 1;
 	node* newNode = (node*)malloc(sizeof(node));
-	__CRITICAL__ = 0;
 	newNode->next = NULL;
 	newNode->thisThread = newThread;
 	if(queue3->head == NULL)
@@ -369,6 +362,7 @@ int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*func
 		queue3->tail->next = newNode;
 	queue3->tail = newNode;
 
+	__CRITICAL__ = 0;
 	return 0;
 };
 
@@ -381,8 +375,10 @@ int my_pthread_yield() {
 /* terminate a thread */
 void my_pthread_exit(void *value_ptr) 
 {
+	__CRITICAL__ = 1;
 	current_thread->ret = value_ptr;
 	current_thread->status = THREAD_DYING;
+	__CRITICAL__ = 0;
 };
 
 /* wait for thread termination */
