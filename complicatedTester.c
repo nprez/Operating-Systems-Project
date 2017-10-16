@@ -8,10 +8,12 @@ void* inc_x(void *x_void_ptr){
 
 	/* increment x to 100 */
 	int *x_ptr = (int *)x_void_ptr;
-	while(*x_ptr<100){
+	int i = 0;
+	while(i<100){
 		my_pthread_mutex_lock(xlock);
 		(*x_ptr)++;
 		my_pthread_mutex_unlock(xlock);
+		i++;
 	};
 
 	return NULL;
@@ -21,10 +23,12 @@ void* inc_y(void *y_void_ptr){
 
 	/* increment y to 100 */
 	int *y_ptr = (int *)y_void_ptr;
-	while(*y_ptr<100){
+	int i = 0;
+	while(i<100){
 		my_pthread_mutex_lock(ylock);
 		(*y_ptr)++;
 		my_pthread_mutex_unlock(ylock);
+		i++;
 	};
 
 	return NULL;
