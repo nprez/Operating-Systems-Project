@@ -57,6 +57,7 @@ typedef struct threadControlBlock {
 } tcb;
 
 enum mutex_status{
+	MUTEX_DESTROYED,
 	MUTEX_UNLOCKED,
 	MUTEX_LOCKED
 };

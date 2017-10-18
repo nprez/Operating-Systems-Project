@@ -433,8 +433,7 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex) {
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
 	__CRITICAL__ = 1;
-	//free(mutex->status);
-	free(mutex);
+	mutex->status = MUTEX_DESTROYED;
 	__CRITICAL__ = 0;
 	return 0;
 };
