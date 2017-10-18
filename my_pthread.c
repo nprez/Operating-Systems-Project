@@ -382,15 +382,17 @@ int my_pthread_join(my_pthread_t thread, void **value_ptr)
 	my_pthread* this = malloc(sizeof(my_pthread));
 	this->tid = -1;
 	this->status = THREAD_READY;
-	this->context = malloc(sizeof(ucontext_t));
-	getcontext(this->context);
-	if (getcontext(this->context) == -1){
-		perror("Error getting context: Could not get the new context\n");
-		exit(1);
-	}
-	this->priority = 3;
 	this->ret = NULL;
 	this->runningTime = 0;
+	this->priority = 3;
+	this->context = malloc(sizeof(ucontext_t));
+	getcontext(this->context);
+	
+	// if (getcontext(this->context) == -1){
+	// 	perror("Error getting context: Could not get the new context\n");
+	// 	exit(1);
+	// }
+	
 	enqueue(this);
 	__CRITICAL__ = 0;
 
