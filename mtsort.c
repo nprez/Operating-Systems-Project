@@ -193,15 +193,11 @@ int main( int argc, char **argv )
         my_pthread_join( threads[i], 0 );
     my_pthread_join( thrcheck, 0 );
 
-    for( i = 0; i < nListSize; i++ )
-        my_pthread_mutex_destroy( &mutexes[i] );
-
     printf( "[AFTER] The list is sorted:\n" );
     printList( pList, nListSize );
 
-    // Cleaning
+    free(mutexes);
     free( pthrargs );
-    free( mutexes );
     free( threads );
     free( pList );
 
