@@ -1,5 +1,7 @@
 CS416 - Assignment 1
-
+Names: Nicholas Prezioso, Benjamin Cahnbley, and Marcella Alvarez
+Username of iLab: njp107, bc499,  and ma1143
+iLab Server: flyweight
 
 *ALL Critical Sections within my_pthread_create cannot be interrupted by anything, including the scheduler (Noted by _CRITICAL_)
 
@@ -51,8 +53,10 @@ void interrupt_handler(int sig);
 
 
 Structure:
-
-  There are queues for each priority level-- high (queue3), medium (queue2) and low (queue1).  Their context is saved, and each running thread is identified by current_thread. This is the thread struct that changes contexts to run other threads.
+  There are queues for each priority level-- high (queue3), medium (queue2) and low (queue1).  Their context is saved, and each running thread is identified by current_thread. This is the thread struct that changes contexts to run other threads. There is an interrupt which interrupt after a certain amount of time to go to the handler, which goes to the scheduler. Aging is also implemented after a certain amount of time, and the priority levels go up by one.
+  
+Testing:
+  We tested our program with multiple testing programing (not including the Benchmark) and they were successful. First, a basic thread where one thread is created and did a function. This is where we fixed our initial problems. We then made more complicated testers to pass different scenarios and our program worked for all. For testing Benchmark, our program works for all, but ParaCal.
 
 Extra Credit: Solving Priority Inversion
 
