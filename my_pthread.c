@@ -156,7 +156,8 @@ void scheduler() {
 			if(ptr==queue2->head){
 				if(queue2->head == queue2->tail){
 					queue2->tail = prev;
-					queue2->tail->next = NULL;
+					if(prev!=NULL)
+						queue2->tail->next = NULL;
 				}
 				queue2->head = queue2->head->next;
 				ptr->next = NULL;
@@ -190,7 +191,8 @@ void scheduler() {
 			if(ptr==queue1->head){
 				if(queue1->head == queue1->tail){
 					queue1->tail = prev;
-					queue1->tail->next = NULL;
+					if(prev!=NULL)
+						queue1->tail->next = NULL;
 				}
 				queue1->head = queue1->head->next;
 				ptr->next = NULL;
