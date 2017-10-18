@@ -3,7 +3,7 @@
 // Date:	09/23/2017
 
 // name: Nicholas Prezioso, Benjamin Cahnbley, and Marcella Alvarez
-// username of iLab: njp107, bc499,  and ma1143
+// username of iLab: njp107, bc499, and ma1143
 // iLab Server: prototype
 
 #include "my_pthread_t.h"
