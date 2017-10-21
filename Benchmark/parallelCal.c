@@ -12,7 +12,7 @@
 #define DEFAULT_THREAD_NUM 4
 
 #define C_SIZE 100000
-#define R_SIZE 1000
+#define R_SIZE 100
 
 pthread_mutex_t   mutex;
 
@@ -44,6 +44,7 @@ void parallel_calculate(void* arg) {
 
 /* verification function */
 void verify() {
+  //printf("fuck verify\n");
 	int i = 0, j = 0;
 	sum = 0;
 	memset(&pSum, 0, R_SIZE*sizeof(int));
