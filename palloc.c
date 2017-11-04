@@ -68,6 +68,30 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		return NULL
 	}
 	//allocate within i
+	int temp = i;
+	for(i=i*PAGE_SIZE+4; i<(temp+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
+		if(!isAllocated && getBlockSize(i)>=capacity){
+			//mark allocated
+			memory[i] = 1;
+			//set size
+			int oldSize = getBlockSize(i);
+			setBlockSize(i, capacity);
+			if(oldSize>capacity){
+				int remainder = oldSize-capacity;
+				if(remainder<5){
+					//get user the extra space
+					setBlockSize(i, );
+				}
+				else{
+					//split block
+					//check if next chunk free
+					//combine if next chunk free
+				}
+			}
+			break;
+		}
+	}
+	return &memory[i+5]
 }
 void mydeallocate(int capacity, char* file, int line, char threadreq){
 
