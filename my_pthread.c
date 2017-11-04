@@ -14,12 +14,14 @@ static queue* queue1;
 static queue* queue2;
 static queue* queue3;
 static node_t* deadQueue;
-/* The pid of the parent process */
-static pid_t parentPid;
 /*in scheduler or allocating memory*/
 static int __CRITICAL__ = 0;
 
 static my_pthread* current_thread = NULL;
+
+my_pthread_t getCurrentTid(){
+	return current_thread->tid;
+}
 
 void enqueue(my_pthread* t){
 	if(t!=NULL){
@@ -256,7 +258,6 @@ void markDead(){
 
 void thread_init(){
 	__CRITICAL__ = 1;
-	parentPid = getpid();
 	
 	queue1 = malloc(sizeof(queue));
 	queue1->head=NULL;
