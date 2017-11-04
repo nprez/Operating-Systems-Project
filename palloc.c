@@ -93,6 +93,38 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	}
 	return &memory[i+5]
 }
-void mydeallocate(int capacity, char* file, int line, char threadreq){
+void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 
+  //check if pointer to be freed is within the memory block
+  int difference = toBeFreed - memory;
+  if(difference < 0 || difference > MEMORY_SIZE){
+      fprintf(stderr, "Error on free in file: %s,  on line %d. Not within memory block\n", file, line);
+      return;
+    }
+
+  //check if the thread calling free is allowed to access this page
+  int pageItsIn = toBeFree / PAGE_SIZE;
+  int i;
+  if(getCurrentTid() != getPageTid(pageItsIn)){
+      fprintf(stderr, "Error on free in file: %s, on line %d. Page blocked from thread.\n", file, line);
+      return;
+    }
+
+  //looking at beginning of allocated chunks within the page is the location being pointed to
+  for(i = (pageItsIn * PAGE_SIZE)+4; i < (pageItsIn + 1)*PAGE_SIZE; i += getBlockSize(i)+5){
+      if(memory[i+5] == toBeFreed){
+	  memory[i] = 0;
+
+	  //adding new free with next free block together if that exists
+	  int capacity = fourCharToInt(memory[i+1], memory[i+2], memory[1+3], memory[i+4]);
+	  if(memory[i+capacity+5] == 0){
+	      capacity += fourCharToInt(memory[i+capacity+6], memory[i+capacity+7], memory[i+capacity+8], memory[i+capacity+9]);
+	      setBlockSize(i,capacity);
+	    }
+	  return;
+	}
+    }
+
+      fprintf(stderr, "Error on free in file: %s, on line %d. Pointer not reference to beginning of allocated chunk.\n", file, line);
+      return;
 }
