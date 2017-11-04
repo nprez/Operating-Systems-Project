@@ -16,83 +16,126 @@ static char firstTime = 0;
  * 4 bytes for TID
  * Beginning of chunks
  * Chunk Layout:
+ * Metadata:
  * 1 byte for allocated/unallocated
  * 4 bytes for chunk size
+ * Data
  */
 
-int fourCharToInt(char a, char b, char c, char d){
+//combines 4 chars into an int using bitwise operations
+static int fourCharToInt(char a, char b, char c, char d){
 	return (a<<24)|(b<<16)|(c<<8)|d;
 }
 
-my_pthread_t getCurrentTid(int pageNum){
-	return fourCharToInt(memory[pageNum*PAGE_SIZE],
-			memory[pageNum*PAGE_SIZE+1],
-			memory[pageNum*PAGE_SIZE+2],
-			memory[pageNum*PAGE_SIZE+3]);
+//returns the TID of the given page
+static my_pthread_t getPageTid(int pageNum){
+	return fourCharToInt(
+		memory[pageNum*PAGE_SIZE],
+		memory[pageNum*PAGE_SIZE+1],
+		memory[pageNum*PAGE_SIZE+2],
+		memory[pageNum*PAGE_SIZE+3]
+	);
 }
 
-int getBlockSize(int i){
+//sets the tid metadata of the given page to the requested value
+static void setPageTid(int pageNum, my_pthread_t tid){
+	memory[pageNum*PAGE_SIZE] = tid>>24;
+	memory[pageNum*PAGE_SIZE+1] = (tid<<8)>>24;
+	memory[pageNum*PAGE_SIZE+2] = (tid<<16)>>24;
+	memory[pageNum*PAGE_SIZE+3] = (tid<<24)>>24;
+}
+
+//returns the size of the metadata pointed to by i
+static int getBlockSize(int i){
 	return fourCharToInt(memory[i+1], memory[i+2], memory[i+3], memory[i+4]);
 }
 
-char isAllocated(int i){
+//sets the metadata pointed to by i's size equal to capacity
+static void setBlockSize(int i, int capacity){
+	memory[i+1] = capacity>>24;
+	memory[i+2] = (capacity<<8)>>24;
+	memory[i+3] = (capacity<<16)>>24;
+	memory[i+4] = (capacity<<24)>>24;
+}
+
+//checks if the metadata pointed to by i is marked as allocated
+static char isAllocated(int i){
 	return memory[i] == 1;
 }
 
-char hasSpace(int pageNum, int capacity){
+//checks if the given page has an unallocated chunk of size capacity or greater
+static char hasSpace(int pageNum, int capacity){
 	int i;
-	for(i=(pageNum+1)*PAGE_SIZE+4; i<(pageNum+2)*PAGE_SIZE; i+=getBlockSize(i)+5){
-		if(getBlockSize(i)+5>=capacity && !isAllocated(i)){
+	for(i=pageNum*PAGE_SIZE+4; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
+		if(!isAllocted(i) && getBlockSize(i)>=capacity){
 			return 1;
 		}
 	}
 	return 0;
 }
 
+//our implementation of malloc
 void* myallocate(int capacity, char* file, int line, char threadreq){
+	int reset = 0;
+	if(!__CRITICAL__){
+		__CRITICAL__ = 1;
+		reset = 1;
+	}
+
+	int i;
+
 	if(!firstTime){
 		//fix this later
 		memset(memory, 0, MEMORY_SIZE);
+		//initiate each page with an unallocated chunk the size of a page
+		for(i=0; i<MEMORY_SIZE; i+=PAGE_SIZE){
+			setBlockSize(i+4, PAGE_SIZE-9);
+		}
 		firstTime = 1;
 	}
+
 	my_pthread_t curr = getCurrentTid();
-	int i;
-	for(i=0; i<MEMORY_SIZE/PAGE_SIZE; i++){
+	for(i=0; i<MEMORY_SIZE/PAGE_SIZE; i++){	//try to find an open page
 		int temp = getPageTid(i);
 		if(temp == 0 || (temp == curr && hasSpace(i, capacity))){
 			break;
 		}
 	}
-	if(i==MEMORY_SIZE/PAGE_SIZE){
-		//out of pages
+	if(i==MEMORY_SIZE/PAGE_SIZE){	//out of pages
 		return NULL
 	}
-	//allocate within i
+	if(curr != temp)	//unallocated page, give it our tid
+		setPageTid(i, curr);
+
+	//allocate within page i
 	int temp = i;
 	for(i=i*PAGE_SIZE+4; i<(temp+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
 		if(!isAllocated && getBlockSize(i)>=capacity){
-			//mark allocated
-			memory[i] = 1;
-			//set size
+			memory[i] = 1;	//mark allocated
 			int oldSize = getBlockSize(i);
-			setBlockSize(i, capacity);
-			if(oldSize>capacity){
-				int remainder = oldSize-capacity;
-				if(remainder<5){
-					//get user the extra space
-					setBlockSize(i, );
-				}
-				else{
-					//split block
-					//check if next chunk free
-					//combine if next chunk free
+			if(oldSize-capacity>=5){	//enough room to split the block without complications
+				setBlockSize(i, capacity);
+				//split block
+				memory[i+5+capacity] = 0;
+				setBlockSize(i+5+capacity, oldSize-(capacity+5));
+				int nextI = i+5+oldSize;
+				if(!isAllocated(nextI)){	//check if next chunk free
+					//combine free chunks
+					setBlockSize(i+5+capacity, getBlockSize(i+5+capacity)+5+getBlockSize(nextI));
 				}
 			}
+			//otherwise, leave the user oldSize capacity to avoid complications
 			break;
 		}
 	}
+
+	if(reset)
+		__CRITICAL__ = 0;
+
 	return &memory[i+5]
 }
+
+//our implementation of free
 void mydeallocate(int capacity, char* file, int line, char threadreq){
 
 }
