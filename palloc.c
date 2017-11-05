@@ -65,8 +65,10 @@ static char isAllocated(int i){
 
 //checks if the given page has an unallocated chunk of size capacity or greater
 static char hasSpace(int pageNum, int capacity){
-	int i;
-	for(i=pageNum*PAGE_SIZE+4; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
+	int i = pageNum*PAGE_SIZE+4;
+	if(pageNum>=MEMORY_SIZE/PAGE_SIZE-4)
+		i = pageNum*PAGE_SIZE;
+	for(i=i; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
 		if(!isAllocated(i) && getBlockSize(i)>=capacity){
 			return 1;
 		}
@@ -85,24 +87,26 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	int i;
 
 	if(!firstTime){
-		//fix this later
 		memset(memory, 0, MEMORY_SIZE);
 		//initiate each page with an unallocated chunk the size of a page
-		for(i=0; i<MEMORY_SIZE; i+=PAGE_SIZE){
+		for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
 			setBlockSize(i+4, PAGE_SIZE-9);
+		}
+		for(i=MEMORY_SIZE-(4*PAGE_SIZE); i<MEMORY_SIZE; i+=PAGE_SIZE){	//shared pages
+			setBlockSize(i, PAGE_SIZE-5);
 		}
 		firstTime = 1;
 	}
 
 	my_pthread_t curr = getCurrentTid();
 	int temp;
-	for(i=0; i<MEMORY_SIZE/PAGE_SIZE; i++){	//try to find an open page
+	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
 		temp = getPageTid(i);
 		if(temp == 0 || (temp == curr && hasSpace(i, capacity))){
 			break;
 		}
 	}
-	if(i==MEMORY_SIZE/PAGE_SIZE){	//out of pages
+	if(i==MEMORY_SIZE/PAGE_SIZE-4){	//out of non shared pages
 		return NULL;
 	}
 	if(curr != temp)	//unallocated page, give it our tid
