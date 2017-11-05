@@ -65,9 +65,11 @@ static char isAllocated(int i){
 
 //checks if the given page has an unallocated chunk of size capacity or greater
 static char hasSpace(int pageNum, int capacity){
-	int i;
-	for(i=pageNum*PAGE_SIZE+4; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
-		if(!isAllocted(i) && getBlockSize(i)>=capacity){
+	int i = pageNum*PAGE_SIZE+4;
+	if(pageNum>=MEMORY_SIZE/PAGE_SIZE-4)
+		i = pageNum*PAGE_SIZE;
+	for(i=i; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
+		if(!isAllocated(i) && getBlockSize(i)>=capacity){
 			return 1;
 		}
 	}
@@ -77,40 +79,43 @@ static char hasSpace(int pageNum, int capacity){
 //our implementation of malloc
 void* myallocate(int capacity, char* file, int line, char threadreq){
 	int reset = 0;
-	if(!__CRITICAL__){
-		__CRITICAL__ = 1;
+	if(!getCritical()){
+		setCritical(1);
 		reset = 1;
 	}
 
 	int i;
 
 	if(!firstTime){
-		//fix this later
 		memset(memory, 0, MEMORY_SIZE);
 		//initiate each page with an unallocated chunk the size of a page
-		for(i=0; i<MEMORY_SIZE; i+=PAGE_SIZE){
+		for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
 			setBlockSize(i+4, PAGE_SIZE-9);
+		}
+		for(i=MEMORY_SIZE-(4*PAGE_SIZE); i<MEMORY_SIZE; i+=PAGE_SIZE){	//shared pages
+			setBlockSize(i, PAGE_SIZE-5);
 		}
 		firstTime = 1;
 	}
 
 	my_pthread_t curr = getCurrentTid();
-	for(i=0; i<MEMORY_SIZE/PAGE_SIZE; i++){	//try to find an open page
-		int temp = getPageTid(i);
+	int temp;
+	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
+		temp = getPageTid(i);
 		if(temp == 0 || (temp == curr && hasSpace(i, capacity))){
 			break;
 		}
 	}
-	if(i==MEMORY_SIZE/PAGE_SIZE){	//out of pages
-		return NULL
+	if(i==MEMORY_SIZE/PAGE_SIZE-4){	//out of non shared pages
+		return NULL;
 	}
 	if(curr != temp)	//unallocated page, give it our tid
 		setPageTid(i, curr);
 
 	//allocate within page i
-	int temp = i;
+	temp = i;
 	for(i=i*PAGE_SIZE+4; i<(temp+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
-		if(!isAllocated && getBlockSize(i)>=capacity){
+		if(!isAllocated(i) && getBlockSize(i)>=capacity){
 			memory[i] = 1;	//mark allocated
 			int oldSize = getBlockSize(i);
 			if(oldSize-capacity>=5){	//enough room to split the block without complications
@@ -130,22 +135,22 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	}
 
 	if(reset)
-		__CRITICAL__ = 0;
+		setCritical(0);
 
-	return &memory[i+5]
+	return &memory[i+5];
 }
 
 //our implementation of free
 void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
   //check if pointer to be freed is within the memory block
-  int difference = toBeFreed - memory;
+  int difference = toBeFreed - ((void*)memory);
   if(difference < 0 || difference > MEMORY_SIZE){
       fprintf(stderr, "Error on free in file: %s,  on line %d. Not within memory block\n", file, line);
       return;
     }
 
   //check if the thread calling free is allowed to access this page
-  int pageItsIn = toBeFree / PAGE_SIZE;
+  int pageItsIn = difference / PAGE_SIZE;
   int i;
   //any thread can free shared memory
   if((MEMORY_SIZE / PAGE_SIZE) - pageItsIn >= 4){
@@ -157,7 +162,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 
   //looking at beginning of allocated chunks within the page is the location being pointed to
   for(i = (pageItsIn * PAGE_SIZE)+4; i < (pageItsIn + 1)*PAGE_SIZE; i += getBlockSize(i)+5){
-      if(memory[i+5] == toBeFreed){
+      if(&memory[i+5] == toBeFreed){
 	  memory[i] = 0;
 
 	  //adding new free with next free block together if that exists

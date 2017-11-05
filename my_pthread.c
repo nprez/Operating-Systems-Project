@@ -23,6 +23,9 @@ my_pthread_t getCurrentTid(){
 	return current_thread->tid;
 }
 
+int getCritical(){ return __CRITICAL__;	}
+void setCritical(int i){ __CRITICAL__ = i; }
+
 void enqueue(my_pthread* t){
 	if(t!=NULL){
 		if(t->status == THREAD_DYING){
