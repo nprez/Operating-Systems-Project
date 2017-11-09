@@ -92,9 +92,8 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
 			setBlockSize(i+4, PAGE_SIZE-9);
 		}
-		for(i=MEMORY_SIZE-(4*PAGE_SIZE); i<MEMORY_SIZE; i+=PAGE_SIZE){	//shared pages
-			setBlockSize(i, PAGE_SIZE-5);
-		}
+		i = MEMORY_SIZE-(4*PAGE_SIZE);
+		setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
 		firstTime = 1;
 	}
 
@@ -163,14 +162,17 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	else
 		shared = 1;
 
-	i = pageItsIn * PAGE_SIZE;
-	if(!shared)
-		i+=4;
+	i = pageItsIn * PAGE_SIZE + 4;
+	if(shared)
+		i = MEMORY_SIZE-(4*PAGE_SIZE);
 
 	int allocatedBlocks = 0;
 	char found = 0;
+	int bound = (pageItsIn + 1)*PAGE_SIZE;
+	if(shared)
+		bound = MEMORY_SIZE;
 	//looking at beginning of allocated blocks within the page is the location being pointed to
-	for(i = i; i < (pageItsIn + 1)*PAGE_SIZE; i += getBlockSize(i)+5){
+	for(i = i; i < bound; i += getBlockSize(i)+5){
 		if(isAllocated(i))
 			allocatedBlocks++;
 
@@ -198,4 +200,9 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 
 	if(!found)
 		fprintf(stderr, "Error on free in file: %s, on line %d. Pointer not reference to beginning of allocated block.\n", file, line);
+}
+
+//allocates a chunk of shared memory of the given size
+void* shalloc(size_t size){
+	return NULL;
 }
