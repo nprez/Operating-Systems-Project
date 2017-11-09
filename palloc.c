@@ -200,10 +200,10 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 			for(i = pageItsIn*PAGE_SIZE; i < capacity; i += getBlockSize(i)+5)
 			  prevBlockSize = getBlockSize(i);
 			if(prevBlockSize != -1){
-			    i -= (prevBlockSize+5);
-			    if(memory[i] == 0)
-			      setBlockSize(i,getBlockSize(i) + 5 + getBlockSize(i + getBlockSize(i) + 5));
-			  }
+				i -= (prevBlockSize+5);
+				if(memory[i] == 0)
+					setBlockSize(i,getBlockSize(i) + 5 + getBlockSize(i + getBlockSize(i) + 5));
+				}
 			found = 1;
 		}
 	}
