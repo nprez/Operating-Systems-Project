@@ -8,11 +8,12 @@
 #define LIBRARYREQ 1
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
 
-
 static char memory[MEMORY_SIZE];
 static char firstTime = 0;
-static char containsThread[MEMORY_SIZE / PAGE_SIZE];
 
+//replace this with a new byte in beginning of page that is binary for 0 = does not contain a thread, 1 = contrains a thread. Remove all instances of containsThread
+static char containsThread[MEMORY_SIZE / PAGE_SIZE];
+ 
 /*
  * Page Layout:
  * 4 bytes for TID
