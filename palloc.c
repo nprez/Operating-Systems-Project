@@ -194,7 +194,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	}
 
 	//free the page
-	if(shared && (allocatedBlocks == 1)){
+	if(!shared && (allocatedBlocks == 1)){
 		setPageTid(pageItsIn, 0);
 	}
 
