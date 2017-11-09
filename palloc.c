@@ -8,8 +8,10 @@
 #define LIBRARYREQ 1
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
 
+
 static char memory[MEMORY_SIZE];
 static char firstTime = 0;
+static char containsThread[MEMORY_SIZE / PAGE_SIZE];
 
 /*
  * Page Layout:
@@ -24,7 +26,7 @@ static char firstTime = 0;
 
 //combines 4 chars into an int using bitwise operations
 static int fourCharToInt(char a, char b, char c, char d){
-	return (a<<24)|(b<<16)|(c<<8)|d;
+  return (a<<24)|(b<<16)|(c<<8)|d;
 }
 
 //returns the TID of the given page
@@ -65,12 +67,12 @@ static char isAllocated(int i){
 
 //checks if the given page has an unallocated block of size capacity or greater
 static char hasSpace(int pageNum, int capacity){
-	int i = pageNum*PAGE_SIZE+4;
+  int i = pageNum*PAGE_SIZE+4;
 	if(pageNum>=MEMORY_SIZE/PAGE_SIZE-4)
-		i = pageNum*PAGE_SIZE;
+	  i = pageNum*PAGE_SIZE;
 	for(i=i; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
-		if(!isAllocated(i) && getBlockSize(i)>=capacity){
-			return 1;
+	  if(!isAllocated(i) && getBlockSize(i)>=capacity){
+		  return 1;
 		}
 	}
 	return 0;
@@ -81,41 +83,46 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	int reset = 0;
 	if(!getCritical()){
 		setCritical(1);
-		reset = 1;
-	}
+reset = 1;
+}
 
 	int i;
-
+	
 	if(!firstTime){
-		memset(memory, 0, MEMORY_SIZE);
-		//initiate each page with an unallocated block the size of a page
-		for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
-			setBlockSize(i+4, PAGE_SIZE-9);
-		}
-		i = MEMORY_SIZE-(4*PAGE_SIZE);
-		setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
-		firstTime = 1;
+	  memset(memory, 0, MEMORY_SIZE);
+	  //initiate each page with an unallocated block the size of a page
+	  for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
+	    setBlockSize(i+4, PAGE_SIZE-9);
+	  }
+	  int j;
+	  for(j = 0; j < sizeof(containsThread); j++)
+	    containsThread[j] = 0;
+	  i = MEMORY_SIZE-(4*PAGE_SIZE);
+	  setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
+	  firstTime = 1;
 	}
-
+	
 	if(capacity<0){
-		fprintf(stderr, "Error on malloc in file: %s,  on line %d. Cannot allocate a negative amount of memory\n", file, line);
-		return NULL;
+	  fprintf(stderr, "Error on malloc in file: %s,  on line %d. Cannot allocate a negative amount of memory\n", file, line);
+	  return NULL;
 	}
-
+	
 	my_pthread_t curr = getCurrentTid();
 	int temp;
 	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
 		temp = getPageTid(i);
-		if(temp == 0 || (temp == curr && hasSpace(i, capacity))){
-			break;
+		if(containsThread[i] == 0 || (temp == curr && hasSpace(i, capacity))){
+		  break;
 		}
 	}
 	if(i==MEMORY_SIZE/PAGE_SIZE-4){	//out of non shared pages
-		return NULL;
+	  return NULL;
 	}
-	if(curr != temp)	//unallocated page, give it our tid
-		setPageTid(i, curr);
-
+	if(containsThread[i] == 0){	//unallocated page, give it our tid
+	  setPageTid(i, curr);
+	  containsThread[i] = 1;
+	}
+	
 	//allocate within page i
 	temp = i;
 	for(i=i*PAGE_SIZE+4; i<(temp+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
