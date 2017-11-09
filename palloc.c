@@ -135,9 +135,11 @@ reset = 1;
 				memory[i+5+capacity] = 0;
 				setBlockSize(i+5+capacity, oldSize-(capacity+5));
 				int nextI = i+5+oldSize;
-				if(!isAllocated(nextI)){	//check if next block free
+				if(nextI%PAGE_SIZE != 0 && !isAllocated(nextI)){	//check if next block free
 					//combine free blocks
-					setBlockSize(i+5+capacity, getBlockSize(i+5+capacity)+5+getBlockSize(nextI));
+					int currSize = getBlockSize(i+5+capacity);
+					int nextSize = getBlockSize(nextI);
+					setBlockSize(i+5+capacity, currSize+5+nextSize);
 				}
 			}
 			//otherwise, leave the user oldSize capacity to avoid complications
@@ -247,7 +249,9 @@ void* shalloc(size_t size){
 				int nextI = i+5+oldSize;
 				if(!isAllocated(nextI)){	//check if next block free
 					//combine free blocks
-					setBlockSize(i+5+size, getBlockSize(i+5+size)+5+getBlockSize(nextI));
+					int currSize = getBlockSize(i+5+size);
+					int nextSize = getBlockSize(nextI);
+					setBlockSize(i+5+size, currSize+5+nextSize);
 				}
 			}
 			//otherwise, leave the user oldSize size to avoid complications
