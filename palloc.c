@@ -172,7 +172,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	if(shared)
 		bound = MEMORY_SIZE;
 	//looking at beginning of allocated blocks within the page is the location being pointed to
-	for(i = i; i < bound; i += getBlockSize(i)+5){
+	for(i; i < bound; i += getBlockSize(i)+5){
 		if(isAllocated(i))
 			allocatedBlocks++;
 
@@ -189,6 +189,16 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 				capacity += getBlockSize(i+capacity+5) + 5;
 				setBlockSize(i,capacity);
 			}
+			//adding previous free block together with current free block if it exists
+			capacity = i;
+			int prevBlockSize = -1;
+			for(i = pageItsIn*PAGE_SIZE; i < capacity; getBlockSize(i)+5)
+			  prevBlockSize = getBlockSize(i);
+			if(prevBlockSize != -1){
+			    i -= (prevBlockSize+5);
+			    if(memory[i] == 0)
+			      setBlockSize(i,getBlockSize(i) + 5 + getBlockSize(i + getBlockSize(i) + 5));
+			  }
 			found = 1;
 		}
 	}
