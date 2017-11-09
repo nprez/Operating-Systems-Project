@@ -190,20 +190,26 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 
 			//adding new free with next free block together if that exists
 			int capacity = getBlockSize(i);
-			if((i+capacity+5)%PAGE_SIZE != 0 && memory[i+capacity+5] == 0){
+			if((i+capacity+5)%PAGE_SIZE != 0 && !isAllocated(i+capacity+5)){
 				capacity += getBlockSize(i+capacity+5) + 5;
 				setBlockSize(i,capacity);
 			}
 			//adding previous free block together with current free block if it exists
-			capacity = i;
+			int oldI = i;
 			int prevBlockSize = -1;
-			for(i = pageItsIn*PAGE_SIZE; i < capacity; i += getBlockSize(i)+5)
+			i = pageItsIn*PAGE_SIZE;
+			if(!shared)
+				i+=4;
+			for(i = i; i < oldI; i += getBlockSize(i)+5)
 				prevBlockSize = getBlockSize(i);
 			if(prevBlockSize != -1){
 				i -= (prevBlockSize+5);
-				if(memory[i] == 0)
-					setBlockSize(i,getBlockSize(i) + 5 + getBlockSize(i + getBlockSize(i) + 5));
+				if(memory[i] == 0){
+					int currSize = getBlockSize(i);
+					int nextSize = getBlockSize(i + currSize + 5);
+					setBlockSize(i, currSize + 5 + nextSize);
 				}
+			}
 			found = 1;
 		}
 	}
