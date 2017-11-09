@@ -14,11 +14,11 @@ static char firstTime = 0;
 /*
  * Page Layout:
  * 4 bytes for TID
- * Beginning of chunks
- * Chunk Layout:
+ * Beginning of blocks
+ * Block Layout:
  * Metadata:
  * 1 byte for allocated/unallocated
- * 4 bytes for chunk size
+ * 4 bytes for block size
  * Data
  */
 
@@ -63,7 +63,7 @@ static char isAllocated(int i){
 	return memory[i] == 1;
 }
 
-//checks if the given page has an unallocated chunk of size capacity or greater
+//checks if the given page has an unallocated block of size capacity or greater
 static char hasSpace(int pageNum, int capacity){
 	int i = pageNum*PAGE_SIZE+4;
 	if(pageNum>=MEMORY_SIZE/PAGE_SIZE-4)
@@ -88,7 +88,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 
 	if(!firstTime){
 		memset(memory, 0, MEMORY_SIZE);
-		//initiate each page with an unallocated chunk the size of a page
+		//initiate each page with an unallocated block the size of a page
 		for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
 			setBlockSize(i+4, PAGE_SIZE-9);
 		}
@@ -124,8 +124,8 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 				memory[i+5+capacity] = 0;
 				setBlockSize(i+5+capacity, oldSize-(capacity+5));
 				int nextI = i+5+oldSize;
-				if(!isAllocated(nextI)){	//check if next chunk free
-					//combine free chunks
+				if(!isAllocated(nextI)){	//check if next block free
+					//combine free blocks
 					setBlockSize(i+5+capacity, getBlockSize(i+5+capacity)+5+getBlockSize(nextI));
 				}
 			}
@@ -166,10 +166,19 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	i = pageItsIn * PAGE_SIZE;
 	if(!shared)
 		i+=4;
-	
-	//looking at beginning of allocated chunks within the page is the location being pointed to
+
+	int allocatedBlocks = 0;
+	char found = 0;
+	//looking at beginning of allocated blocks within the page is the location being pointed to
 	for(i = i; i < (pageItsIn + 1)*PAGE_SIZE; i += getBlockSize(i)+5){
+		if(isAllocated(i))
+			allocatedBlocks++;
+
 		if(&memory[i+5] == toBeFreed){
+			if(!isAllocated(i)){
+				fprintf(stderr, "Error on free in file: %s, on line %d. Address already free.\n", file, line);
+				return;
+			}
 			memory[i] = 0;
 
 			//adding new free with next free block together if that exists
@@ -178,10 +187,15 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 				capacity += getBlockSize(i+capacity+5) + 5;
 				setBlockSize(i,capacity);
 			}
-			return;
+			found = 1;
 		}
 	}
 
-	fprintf(stderr, "Error on free in file: %s, on line %d. Pointer not reference to beginning of allocated chunk.\n", file, line);
-	return;
+	//free the page
+	if(shared && (allocatedBlocks == 1)){
+		setPageTid(pageItsIn, 0);
+	}
+
+	if(!found)
+		fprintf(stderr, "Error on free in file: %s, on line %d. Pointer not reference to beginning of allocated block.\n", file, line);
 }
