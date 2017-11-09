@@ -97,6 +97,11 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		firstTime = 1;
 	}
 
+	if(capacity<0){
+		fprintf(stderr, "Error on malloc in file: %s,  on line %d. Cannot allocate a negative amount of memory\n", file, line);
+		return NULL;
+	}
+
 	my_pthread_t curr = getCurrentTid();
 	int temp;
 	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
@@ -214,5 +219,27 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 
 //allocates a chunk of shared memory of the given size
 void* shalloc(size_t size){
+	int i = MEMORY_SIZE-(4*PAGE_SIZE);
+	for(i=i; i<MEMORY_SIZE; i+=getBlockSize(i)+5){
+		if(!isAllocated(i) && getBlockSize(i)>=size){
+			//allocate the block
+			memory[i] = 1;
+
+			int oldSize = getBlockSize(i);
+			if(oldSize-size>=5){	//enough room to split the block without complications
+				setBlockSize(i, size);
+				//split block
+				memory[i+5+size] = 0;
+				setBlockSize(i+5+size, oldSize-(size+5));
+				int nextI = i+5+oldSize;
+				if(!isAllocated(nextI)){	//check if next block free
+					//combine free blocks
+					setBlockSize(i+5+size, getBlockSize(i+5+size)+5+getBlockSize(nextI));
+				}
+			}
+			//otherwise, leave the user oldSize size to avoid complications
+			return &memory[i+5];
+		}
+	}
 	return NULL;
 }
