@@ -153,15 +153,22 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	int pageItsIn = difference / PAGE_SIZE;
 	int i;
 	//any thread can free shared memory
+	char shared = 0;
 	if((MEMORY_SIZE / PAGE_SIZE) - pageItsIn >= 4){
 		if(getCurrentTid() != getPageTid(pageItsIn)){
 			fprintf(stderr, "Error on free in file: %s, on line %d. Page blocked from thread.\n", file, line);
 			return;
 		}
 	}
+	else
+		shared = 1;
 
+	i = pageItsIn * PAGE_SIZE;
+	if(!shared)
+		i+=4;
+	
 	//looking at beginning of allocated chunks within the page is the location being pointed to
-	for(i = (pageItsIn * PAGE_SIZE)+4; i < (pageItsIn + 1)*PAGE_SIZE; i += getBlockSize(i)+5){
+	for(i = i; i < (pageItsIn + 1)*PAGE_SIZE; i += getBlockSize(i)+5){
 		if(&memory[i+5] == toBeFreed){
 			memory[i] = 0;
 
