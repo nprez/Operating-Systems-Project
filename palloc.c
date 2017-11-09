@@ -242,7 +242,9 @@ void* shalloc(size_t size){
 				int nextI = i+5+oldSize;
 				if(!isAllocated(nextI)){	//check if next block free
 					//combine free blocks
-					setBlockSize(i+5+size, getBlockSize(i+5+size)+5+getBlockSize(nextI));
+					int currSize = getBlockSize(i+5+size);
+					int nextSize = getBlockSize(nextI);
+					setBlockSize(i+5+size, currSize+5+nextSize);
 				}
 			}
 			//otherwise, leave the user oldSize size to avoid complications
