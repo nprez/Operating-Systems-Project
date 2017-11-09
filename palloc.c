@@ -190,7 +190,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 
 			//adding new free with next free block together if that exists
 			int capacity = getBlockSize(i);
-			if(memory[i+capacity+5] == 0){
+			if((i+capacity+5)%PAGE_SIZE != 0 && memory[i+capacity+5] == 0){
 				capacity += getBlockSize(i+capacity+5) + 5;
 				setBlockSize(i,capacity);
 			}
