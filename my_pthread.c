@@ -36,6 +36,8 @@ static node_t* deadQueue;
 static int __CRITICAL__ = 0;
 
 static my_pthread* current_thread = NULL;
+ static int swap_inited=0;
+
 
 void updateMemoryProtections(){
 	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
@@ -532,6 +534,13 @@ static char hasSpace(int pageNum, int capacity){
 
 //our implementation of malloc
 void* myallocate(int capacity, char* file, int line, char threadreq){
+	if(swap_inited==0){
+	//create swap file
+	FILE* fp = fopen(swapfile, "w");
+	ftruncate(fileno(fp), 16*1024);
+	swap_inited=1;
+	}
+	
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 
 	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
