@@ -37,10 +37,6 @@ static int __CRITICAL__ = 0;
 
 static my_pthread* current_thread = NULL;
 
-my_pthread_t getCurrentTid(){
-	return current_thread->tid;
-}
-
 int getCritical(){ return __CRITICAL__;	}
 void setCritical(int i){ __CRITICAL__ = i; }
 
@@ -477,10 +473,10 @@ static int fourCharToInt(char a, char b, char c, char d){
 //returns the TID of the given page
 static my_pthread_t getPageTid(int pageNum){
 	return fourCharToInt(
-		memory[pageNum*PAGE_SIZE],
 		memory[pageNum*PAGE_SIZE+1],
 		memory[pageNum*PAGE_SIZE+2],
-		memory[pageNum*PAGE_SIZE+3]
+		memory[pageNum*PAGE_SIZE+3],
+		memory[pageNum*PAGE_SIZE+4]
 	);
 }
 
@@ -525,11 +521,7 @@ static char hasSpace(int pageNum, int capacity){
 
 //our implementation of malloc
 void* myallocate(int capacity, char* file, int line, char threadreq){
-	int reset = 0;
-	if(!getCritical()){
-		setCritical(1);
-		reset = 1;
-	}
+	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 
 	int i;
 	
@@ -546,12 +538,11 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	
 	if(capacity<0){
 		fprintf(stderr, "Error on malloc in file: %s,  on line %d. Cannot allocate a negative amount of memory\n", file, line);
-		if(reset)
-			setCritical(0);
+		__CRITICAL__ = oldCrit;
 		return NULL;
 	}
 	
-	my_pthread_t curr = getCurrentTid();
+	my_pthread_t curr = current_thread->tid;
 	int temp;
 	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
 		temp = getPageTid(i);
@@ -560,8 +551,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}
 	}
 	if(i==MEMORY_SIZE/PAGE_SIZE-4){	//out of non shared pages
-		if(reset)
-			setCritical(0);
+		__CRITICAL__ = oldCrit;
 		return NULL;
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
@@ -593,18 +583,19 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}
 	}
 
-	if(reset)
-		setCritical(0);
+	__CRITICAL__ = oldCrit;
 
 	return &memory[i+5];
 }
 
 //our implementation of free
 void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
+	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 	//check if pointer to be freed is within the memory block
 	int difference = toBeFreed - ((void*)memory);
 	if(difference < 0 || difference > MEMORY_SIZE){
 		fprintf(stderr, "Error on free in file: %s,  on line %d. Not within memory block\n", file, line);
+		__CRITICAL__ = oldCrit;
 		return;
 	}
 
@@ -614,8 +605,9 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	//any thread can free shared memory
 	char shared = 0;
 	if((MEMORY_SIZE / PAGE_SIZE) - pageItsIn >= 4){
-		if(getCurrentTid() != getPageTid(pageItsIn)){
+		if(current_thread->tid != getPageTid(pageItsIn)){
 			fprintf(stderr, "Error on free in file: %s, on line %d. Page blocked from thread.\n", file, line);
+			__CRITICAL__ = oldCrit;
 			return;
 		}
 	}
@@ -639,6 +631,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 		if(&memory[i+5] == toBeFreed){
 			if(!isAllocated(i)){
 				fprintf(stderr, "Error on free in file: %s, on line %d. Address already free.\n", file, line);
+				__CRITICAL__ = oldCrit;
 				return;
 			}
 			memory[i] = 0;
@@ -677,10 +670,13 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 
 	if(!found)
 		fprintf(stderr, "Error on free in file: %s, on line %d. Pointer not reference to beginning of allocated block.\n", file, line);
+	__CRITICAL__ = oldCrit;
 }
 
 //allocates a chunk of shared memory of the given size
 void* shalloc(size_t size){
+	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
+
 	int i = MEMORY_SIZE-(4*PAGE_SIZE);
 	for(i=i; i<MEMORY_SIZE; i+=getBlockSize(i)+5){
 		if(!isAllocated(i) && getBlockSize(i)>=size){
@@ -702,9 +698,12 @@ void* shalloc(size_t size){
 				}
 			}
 			//otherwise, leave the user oldSize size to avoid complications
+			__CRITICAL__ = oldCrit;
 			return &memory[i+5];
 		}
 	}
+
+	__CRITICAL__ = oldCrit;
 	return NULL;
 }
 

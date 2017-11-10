@@ -33,10 +33,10 @@ static int fourCharToInt(char a, char b, char c, char d){
 //returns the TID of the given page
 static my_pthread_t getPageTid(int pageNum){
 	return fourCharToInt(
-		memory[pageNum*PAGE_SIZE],
 		memory[pageNum*PAGE_SIZE+1],
 		memory[pageNum*PAGE_SIZE+2],
-		memory[pageNum*PAGE_SIZE+3]
+		memory[pageNum*PAGE_SIZE+3],
+		memory[pageNum*PAGE_SIZE+4]
 	);
 }
 

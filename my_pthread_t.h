@@ -41,7 +41,7 @@ enum thread_status{
 };
 
 static char memory[MEMORY_SIZE];
-static char firstTime = 0;
+static char firstTime;
 
 typedef uint my_pthread_t;
 
@@ -106,7 +106,6 @@ typedef struct my_pthread_mutex_t {
 
 int getCritical();
 void setCritical(int i);
-my_pthread_t getCurrentTid();
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg);
@@ -140,7 +139,7 @@ static void setPageTid(int pageNum, my_pthread_t tid);
 
 static int getBlockSize(int i);
 
-static void setBlocksize(int i, int capacity);
+static void setBlockSize(int i, int capacity);
 
 static char hasSpace(int pageName, int capacity);
 
