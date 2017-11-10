@@ -6,13 +6,12 @@
 #define MEMORY_SIZE 1048576
 #define THREADREQ 0
 #define LIBRARYREQ 1
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+#define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
 
 static char memory[MEMORY_SIZE];
 static char firstTime = 0;
 
 //replace this with a new byte in beginning of page that is binary for 0 = does not contain a thread, 1 = contrains a thread. Remove all instances of containsThread
-static char containsThread[MEMORY_SIZE / PAGE_SIZE];
  
 /*
  * Page Layout:
@@ -94,10 +93,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		//initiate each page with an unallocated block the size of a page
 		for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
 			setBlockSize(i+4, PAGE_SIZE-9);
-		}
-		int j;
-		for(j = 0; j < sizeof(containsThread); j++)
-			containsThread[j] = 0;
+		}		
 		i = MEMORY_SIZE-(4*PAGE_SIZE);
 		setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
 		firstTime = 1;
@@ -112,16 +108,15 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	int temp;
 	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
 		temp = getPageTid(i);
-		if(containsThread[i] == 0 || (temp == curr && hasSpace(i, capacity))){
+		if(temp == 0 || (temp == curr && hasSpace(i, capacity))){
 		  break;
 		}
 	}
 	if(i==MEMORY_SIZE/PAGE_SIZE-4){	//out of non shared pages
 		return NULL;
 	}
-	if(containsThread[i] == 0){	//unallocated page, give it our tid
+	if(temp == 0){	//unallocated page, give it our tid
 		setPageTid(i, curr);
-		containsThread[i] = 1;
 	}
 	
 	//allocate within page i
