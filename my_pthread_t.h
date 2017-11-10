@@ -13,6 +13,14 @@
 /* To use real pthread Library in Benchmark, you have to comment the USE_MY_PTHREAD macro */
 #define USE_MY_PTHREAD 1
 
+#define MEMORY_SIZE 1048576
+#define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
+
+#define THREADREQ 0
+#define LIBRARYREQ 1
+
+
+
 /* include lib header files that you need here: */
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -23,6 +31,7 @@
 #include <stdint.h>
 #include <sys/ucontext.h>
 #include <signal.h>
+#include <string.h>
 
 enum thread_status{
 	THREAD_RUNNING,     /* Running thread. */
@@ -30,6 +39,9 @@ enum thread_status{
 	THREAD_BLOCKED,     /* Waiting for an event to trigger. */
 	THREAD_DYING        /* About to be destroyed. */
 };
+
+static char memory[MEMORY_SIZE];
+static char firstTime = 0;
 
 typedef uint my_pthread_t;
 
@@ -120,6 +132,24 @@ int my_pthread_mutex_unlock(my_pthread_mutex_t *mutex);
 /* destroy the mutex */
 int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex);
 
+static int fourCharToInt(char a, char b, char c, char d);
+
+static my_pthread_t getPageTid(int pageNum);
+
+static void setPageTid(int pageNum, my_pthread_t tid);
+
+static int getBlockSize(int i);
+
+static void setBlocksize(int i, int capacity);
+
+static char hasSpace(int pageName, int capacity);
+
+void* myallocate(int capacity, char* file, int line, char threadreq);
+
+void mydeallocate(void* toBeFreed, char* file, int line, char threadreq);
+
+void* shalloc(size_t size);
+
 #ifdef USE_MY_PTHREAD
 #define pthread_t my_pthread_t
 #define pthread_mutex_t my_pthread_mutex_t
@@ -130,6 +160,9 @@ int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex);
 #define pthread_mutex_lock my_pthread_mutex_lock
 #define pthread_mutex_unlock my_pthread_mutex_unlock
 #define pthread_mutex_destroy my_pthread_mutex_destroy
+
+#define malloc(x) myallocate(x,__FILE__,__LINE__,THREADREQ)
+#define free(x) mydeallocate (x,__FILE__,__LINE__,THREADREQ)
 #endif
 
 #endif
