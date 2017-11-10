@@ -37,9 +37,6 @@ static int __CRITICAL__ = 0;
 
 static my_pthread* current_thread = NULL;
 
-int getCritical(){ return __CRITICAL__;	}
-void setCritical(int i){ __CRITICAL__ = i; }
-
 void enqueue(my_pthread* t){
 	if(t!=NULL){
 		if(t->status == THREAD_DYING){

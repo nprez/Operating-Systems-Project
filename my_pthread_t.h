@@ -104,9 +104,6 @@ typedef struct my_pthread_mutex_t {
 
 /* Function Declarations: */
 
-int getCritical();
-void setCritical(int i);
-
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg);
 
