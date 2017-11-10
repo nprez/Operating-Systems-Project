@@ -32,6 +32,8 @@
 #include <sys/ucontext.h>
 #include <signal.h>
 #include <string.h>
+#include <malloc.h>
+#include <sys/mman.h>
 
 enum thread_status{
 	THREAD_RUNNING,     /* Running thread. */
@@ -40,7 +42,7 @@ enum thread_status{
 	THREAD_DYING        /* About to be destroyed. */
 };
 
-static char memory[MEMORY_SIZE];
+static char* memory;
 static char firstTime;
 
 typedef uint my_pthread_t;
@@ -103,6 +105,8 @@ typedef struct my_pthread_mutex_t {
 
 
 /* Function Declarations: */
+
+void updateMemoryProtections();
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg);

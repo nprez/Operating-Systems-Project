@@ -9,7 +9,7 @@
 #include "my_pthread_t.h"
 
 
-static char memory[MEMORY_SIZE];
+static char* memory;
 static char firstTime = 0;
 
 //replace this with a new byte in beginning of page that is binary for 0 = does not contain a thread, 1 = contrains a thread. Remove all instances of containsThread
@@ -36,6 +36,16 @@ static node_t* deadQueue;
 static int __CRITICAL__ = 0;
 
 static my_pthread* current_thread = NULL;
+
+void updateMemoryProtections(){
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
+	int i;
+	for(i=0; i<MEMORY_SIZE/PAGE_SIZE; i++){
+		if(memory[i*PAGE_SIZE]!=1 || getPageTid(i) != current_thread->tid){
+			mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE, PROT_NONE);
+		}
+	}
+}
 
 void enqueue(my_pthread* t){
 	if(t!=NULL){
@@ -252,6 +262,10 @@ void scheduler() {
 		period.it_interval.tv_sec = 0;
 		period.it_interval.tv_usec = 100000*(4-current_thread->priority);
 		setitimer(ITIMER_VIRTUAL, &period, NULL);
+	}
+
+	if(firstTime){	//protect and unprotect pages
+		updateMemoryProtections();
 	}
 	
 	__CRITICAL__ = 0; /* leaving scheduler */
@@ -520,9 +534,12 @@ static char hasSpace(int pageNum, int capacity){
 void* myallocate(int capacity, char* file, int line, char threadreq){
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
+
 	int i;
 	
 	if(!firstTime){
+		memory = (char*)memalign(PAGE_SIZE, MEMORY_SIZE);
 		memset(memory, 0, MEMORY_SIZE);
 		//initiate each page with an unallocated block the size of a page
 		for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
@@ -535,6 +552,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	
 	if(capacity<0){
 		fprintf(stderr, "Error on malloc in file: %s,  on line %d. Cannot allocate a negative amount of memory\n", file, line);
+		updateMemoryProtections();
 		__CRITICAL__ = oldCrit;
 		return NULL;
 	}
@@ -548,6 +566,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}
 	}
 	if(i==MEMORY_SIZE/PAGE_SIZE-4){	//out of non shared pages
+		updateMemoryProtections();
 		__CRITICAL__ = oldCrit;
 		return NULL;
 	}
@@ -580,6 +599,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}
 	}
 
+	updateMemoryProtections();
 	__CRITICAL__ = oldCrit;
 
 	return &memory[i+5];
@@ -588,10 +608,14 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 //our implementation of free
 void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
+
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
+
 	//check if pointer to be freed is within the memory block
 	int difference = toBeFreed - ((void*)memory);
 	if(difference < 0 || difference > MEMORY_SIZE){
 		fprintf(stderr, "Error on free in file: %s,  on line %d. Not within memory block\n", file, line);
+		updateMemoryProtections();
 		__CRITICAL__ = oldCrit;
 		return;
 	}
@@ -604,6 +628,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	if((MEMORY_SIZE / PAGE_SIZE) - pageItsIn >= 4){
 		if(current_thread->tid != getPageTid(pageItsIn)){
 			fprintf(stderr, "Error on free in file: %s, on line %d. Page blocked from thread.\n", file, line);
+			updateMemoryProtections();
 			__CRITICAL__ = oldCrit;
 			return;
 		}
@@ -628,6 +653,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 		if(&memory[i+5] == toBeFreed){
 			if(!isAllocated(i)){
 				fprintf(stderr, "Error on free in file: %s, on line %d. Address already free.\n", file, line);
+				updateMemoryProtections();
 				__CRITICAL__ = oldCrit;
 				return;
 			}
@@ -667,12 +693,15 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 
 	if(!found)
 		fprintf(stderr, "Error on free in file: %s, on line %d. Pointer not reference to beginning of allocated block.\n", file, line);
+	updateMemoryProtections();
 	__CRITICAL__ = oldCrit;
 }
 
 //allocates a chunk of shared memory of the given size
 void* shalloc(size_t size){
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
+
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 
 	int i = MEMORY_SIZE-(4*PAGE_SIZE);
 	for(i=i; i<MEMORY_SIZE; i+=getBlockSize(i)+5){
@@ -695,11 +724,13 @@ void* shalloc(size_t size){
 				}
 			}
 			//otherwise, leave the user oldSize size to avoid complications
+			updateMemoryProtections();
 			__CRITICAL__ = oldCrit;
 			return &memory[i+5];
 		}
 	}
 
+	updateMemoryProtections();
 	__CRITICAL__ = oldCrit;
 	return NULL;
 }
