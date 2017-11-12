@@ -562,7 +562,6 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}		
 		i = MEMORY_SIZE-(4*PAGE_SIZE);
 		setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
-		//fp = fopen("swapfile", "w");
 		fd = open("swapfile", O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
 		lseek(fd, (MEMORY_SIZE*2)-1, SEEK_SET);
 		write(fd, "", 1);
