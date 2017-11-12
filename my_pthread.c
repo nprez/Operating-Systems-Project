@@ -549,7 +549,10 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}		
 		i = MEMORY_SIZE-(4*PAGE_SIZE);
 		setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
-		FILE* fp = fopen("swapfile", "w");
+		FILE* fp = fopen("swapfile", "r+");
+		if (fp < 0) {
+			perror("File failed to create");
+		}
 		ftruncate(fileno(fp), 16*1024*1024);
 		swap_inited=1;
 		firstTime = 1;
