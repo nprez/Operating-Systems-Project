@@ -164,8 +164,6 @@ void* shalloc(size_t size);
 #define pthread_mutex_unlock my_pthread_mutex_unlock
 #define pthread_mutex_destroy my_pthread_mutex_destroy
 
-#define malloc(x) myallocate(x,__FILE__,__LINE__,THREADREQ)
-#define free(x) mydeallocate (x,__FILE__,__LINE__,THREADREQ)
 #endif
 
 #endif

@@ -753,3 +753,6 @@ void* shalloc(size_t size){
 	__CRITICAL__ = oldCrit;
 	return NULL;
 }
+
+#define malloc(x) myallocate(x,__FILE__,__LINE__,THREADREQ)
+#define free(x) mydeallocate (x,__FILE__,__LINE__,THREADREQ)
