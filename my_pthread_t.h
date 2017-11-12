@@ -111,6 +111,20 @@ typedef struct my_pthread_mutex_t {
 
 void updateMemoryProtections();
 
+void enqueue(my_pthread* t);
+
+my_pthread* dequeue();
+
+void scheduler();
+
+static void handler(int sig, siginfo_t *si, void *unused);
+
+void interrupt_handler(int sig);
+
+void markDead();
+
+void thread_init();
+
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg);
 

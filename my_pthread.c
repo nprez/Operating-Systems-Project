@@ -168,7 +168,7 @@ my_pthread* dequeue(){
 	}
 }
 
-void scheduler() {
+void scheduler(){
 	__CRITICAL__ = 1;
 	int p = 3;
 	if (current_thread != NULL)
@@ -290,7 +290,11 @@ void scheduler() {
 		setcontext(current_thread->context);
 }
 
-void interrupt_handler(int sig) {
+static void handler(int sig, siginfo_t *si, void *unused){
+	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
+}
+
+void interrupt_handler(int sig){
 	/* check if the thread is in a critical section */
 	if (__CRITICAL__) { return; }
 		scheduler();
@@ -569,6 +573,17 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		lseek(fd, (MEMORY_SIZE*2)-1, SEEK_SET);
 		write(fd, "", 1);
 		swapMemory = mmap(0, MEMORY_SIZE*2, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+		struct sigaction sa;
+		sa.sa_flags = SA_SIGINFO;
+		sigemptyset(&sa.sa_mask);
+		sa.sa_sigaction = handler;
+
+		if (sigaction(SIGSEGV, &sa, NULL) == -1){
+			printf("Fatal error setting up signal handler\n");
+			exit(EXIT_FAILURE);	//explode!
+		}
+
 		firstTime = 1;
 	}
 	
