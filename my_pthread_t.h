@@ -34,6 +34,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <sys/mman.h>
+#include <fcntl.h>
 
 enum thread_status{
 	THREAD_RUNNING,     /* Running thread. */
@@ -43,6 +44,8 @@ enum thread_status{
 };
 
 static char* memory;
+static char* swapMemory;
+static int fd;
 static char firstTime;
 
 typedef uint my_pthread_t;

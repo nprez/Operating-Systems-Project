@@ -10,14 +10,27 @@
 
 
 static char* memory;
+static char* swapMemory;
+static int fd;
 static char firstTime = 0;
 
 //replace this with a new byte in beginning of page that is binary for 0 = does not contain a thread, 1 = contrains a thread. Remove all instances of containsThread
  
-/*
- * Page Layout:
+/* Page Layout:
  * 1 byte for allocated/unallocated
  * 4 bytes for TID
+ * Beginning of blocks
+ * Block Layout:
+ * Metadata:
+ * 1 byte for allocated/unallocated
+ * 4 bytes for block size
+ * Data
+ */
+
+/* Swap File Page Layout:
+ * 1 byte for allocated/unallocated
+ * 4 bytes for TID
+ * 4 bytes for location in real memory
  * Beginning of blocks
  * Block Layout:
  * Metadata:
@@ -549,9 +562,11 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}		
 		i = MEMORY_SIZE-(4*PAGE_SIZE);
 		setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
-		FILE* fp = fopen("swapfile", "w");
-		ftruncate(fileno(fp), 16*1024*1024);
-		swap_inited=1;
+		//fp = fopen("swapfile", "w");
+		fd = open("swapfile", O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
+		lseek(fd, (MEMORY_SIZE*2)-1, SEEK_SET);
+		write(fd, "", 1);
+		swapMemory = mmap(0, MEMORY_SIZE*2, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 		firstTime = 1;
 	}
 	
@@ -567,7 +582,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
 		temp = getPageTid(i);
 		if(!isAllocated(i*PAGE_SIZE) || (temp == curr && hasSpace(i, capacity))){
-		  break;
+			break;
 		}
 	}
 	if(i==MEMORY_SIZE/PAGE_SIZE-4){	//out of non shared pages
@@ -739,5 +754,3 @@ void* shalloc(size_t size){
 	__CRITICAL__ = oldCrit;
 	return NULL;
 }
-
-
