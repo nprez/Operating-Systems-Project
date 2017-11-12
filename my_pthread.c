@@ -55,8 +55,11 @@ void updateMemoryProtections(){
 	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 	int i;
 	for(i=0; i<MEMORY_SIZE/PAGE_SIZE; i++){
-		if(memory[i*PAGE_SIZE]!=1 || getPageTid(i) != current_thread->tid){
-			mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE, PROT_NONE);
+		my_pthread_t curr = -1;
+		if(current_thread != NULL)
+			curr = current_thread->tid;
+		if(memory[i*PAGE_SIZE]!=1 || getPageTid(i) != curr){
+			//mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE, PROT_NONE);
 		}
 	}
 }
@@ -576,7 +579,10 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		return NULL;
 	}
 	
-	my_pthread_t curr = current_thread->tid;
+	my_pthread_t curr = -1;
+	if(current_thread != NULL)
+		curr = current_thread->tid;
+
 	int temp;
 	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
 		temp = getPageTid(i);
