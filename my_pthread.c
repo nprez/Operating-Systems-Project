@@ -52,7 +52,9 @@ static my_pthread* current_thread = NULL;
 
 
 void updateMemoryProtections(){
-	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
+	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
+	 perror("Couldn't use mprotect");	
+	}
 	int i;
 	for(i=0; i<MEMORY_SIZE/PAGE_SIZE; i++){
 		my_pthread_t curr = -1;
@@ -654,7 +656,9 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 
-	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
+	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
+	perror("Couldn't use mprotect");	
+	}
 
 	//check if pointer to be freed is within the memory block
 	int difference = toBeFreed - ((void*)memory);
@@ -746,7 +750,9 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 void* shalloc(size_t size){
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 
-	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
+	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
+		perror("Couldn't use mprotect");	
+	}
 
 	int i = MEMORY_SIZE-(4*PAGE_SIZE);
 	for(i=i; i<MEMORY_SIZE; i+=getBlockSize(i)+5){
