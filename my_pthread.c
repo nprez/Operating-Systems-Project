@@ -59,7 +59,7 @@ void updateMemoryProtections(){
 		if(current_thread != NULL)
 			curr = current_thread->tid;
 		if(memory[i*PAGE_SIZE]!=1 || getPageTid(i) != curr){
-			//mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE, PROT_NONE);
+			mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE, PROT_NONE);
 		}
 	}
 }
@@ -498,12 +498,16 @@ int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex) {
 
 
 //combines 4 chars into an int using bitwise operations
-static int fourCharToInt(char a, char b, char c, char d){
-	return (a<<24)|(b<<16)|(c<<8)|d;
+static unsigned int fourCharToInt(char a, char b, char c, char d){
+	return
+	((unsigned char)a<<24)|
+	((unsigned char)b<<16)|
+	((unsigned char)c<<8)|
+	(unsigned char)d;
 }
 
 //returns the TID of the given page
-static my_pthread_t getPageTid(int pageNum){
+static my_pthread_t getPageTid(unsigned int pageNum){
 	return fourCharToInt(
 		memory[pageNum*PAGE_SIZE+1],
 		memory[pageNum*PAGE_SIZE+2],
@@ -513,7 +517,7 @@ static my_pthread_t getPageTid(int pageNum){
 }
 
 //sets the tid metadata of the given page to the requested value
-static void setPageTid(int pageNum, my_pthread_t tid){
+static void setPageTid(unsigned int pageNum, my_pthread_t tid){
 	memory[pageNum*PAGE_SIZE+1] = tid>>24;
 	memory[pageNum*PAGE_SIZE+2] = (tid<<8)>>24;
 	memory[pageNum*PAGE_SIZE+3] = (tid<<16)>>24;
@@ -521,16 +525,17 @@ static void setPageTid(int pageNum, my_pthread_t tid){
 }
 
 //returns the size of the metadata pointed to by i
-static int getBlockSize(int i){
+static unsigned int getBlockSize(int i){
 	return fourCharToInt(memory[i+1], memory[i+2], memory[i+3], memory[i+4]);
 }
 
 //sets the metadata pointed to by i's size equal to capacity
-static void setBlockSize(int i, int capacity){
-	memory[i+1] = capacity>>24;
-	memory[i+2] = (capacity<<8)>>24;
-	memory[i+3] = (capacity<<16)>>24;
-	memory[i+4] = (capacity<<24)>>24;
+static void setBlockSize(int i, unsigned int capacity){
+	my_pthread_t cap = capacity;
+	memory[i+1] = cap>>24;
+	memory[i+2] = (cap<<8)>>24;
+	memory[i+3] = (cap<<16)>>24;
+	memory[i+4] = (cap<<24)>>24;
 }
 
 //checks if the metadata pointed to by i is marked as allocated
@@ -539,7 +544,7 @@ static char isAllocated(int i){
 }
 
 //checks if the given page has an unallocated block of size capacity or greater
-static char hasSpace(int pageNum, int capacity){
+static char hasSpace(int pageNum, unsigned int capacity){
 	int i = pageNum*PAGE_SIZE+5;
 	if(pageNum>=MEMORY_SIZE/PAGE_SIZE-4)
 		i = pageNum*PAGE_SIZE;

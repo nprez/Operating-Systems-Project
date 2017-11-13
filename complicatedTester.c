@@ -1,8 +1,8 @@
 #include "my_pthread.c"
 #include <stdio.h>
 
-my_pthread_mutex_t* xlock;
-my_pthread_mutex_t* ylock;
+my_pthread_mutex_t xlock;
+my_pthread_mutex_t ylock;
 
 void* inc_x(void *x_void_ptr){
 
@@ -10,9 +10,9 @@ void* inc_x(void *x_void_ptr){
 	int *x_ptr = (int *)x_void_ptr;
 	int i = 0;
 	while(i<100){
-		my_pthread_mutex_lock(xlock);
+		my_pthread_mutex_lock(&xlock);
 		(*x_ptr)++;
-		my_pthread_mutex_unlock(xlock);
+		my_pthread_mutex_unlock(&xlock);
 		i++;
 	};
 
@@ -25,9 +25,9 @@ void* inc_y(void *y_void_ptr){
 	int *y_ptr = (int *)y_void_ptr;
 	int i = 0;
 	while(i<100){
-		my_pthread_mutex_lock(ylock);
+		my_pthread_mutex_lock(&ylock);
 		(*y_ptr)++;
-		my_pthread_mutex_unlock(ylock);
+		my_pthread_mutex_unlock(&ylock);
 		i++;
 	};
 
@@ -39,10 +39,8 @@ int main(){
 	my_pthread_t threads[THREAD_NUM];
 
 	int x = 0, y = 0;
-	xlock = malloc(sizeof(my_pthread_mutex_t));
-	ylock = malloc(sizeof(my_pthread_mutex_t));
-	my_pthread_mutex_init(xlock, NULL);
-	my_pthread_mutex_init(ylock, NULL);
+	my_pthread_mutex_init(&xlock, NULL);
+	my_pthread_mutex_init(&ylock, NULL);
 
 	int i;
 
@@ -55,8 +53,8 @@ int main(){
 		my_pthread_join(threads[i], NULL);
 	}
 
-	my_pthread_mutex_destroy(xlock);
-	my_pthread_mutex_destroy(ylock);
+	my_pthread_mutex_destroy(&xlock);
+	my_pthread_mutex_destroy(&ylock);
 
 	printf("Final values: x: %d y: %d\n", x, y);	//1000, 1000
 	
