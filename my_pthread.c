@@ -53,10 +53,10 @@ static my_pthread* current_thread = NULL;
 
 void updateMemoryProtections(){
 	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
-	 perror("Couldn't use mprotect");	
+		perror("Couldn't use mprotect");	
 	}
 	int i;
-	for(i=0; i<MEMORY_SIZE/PAGE_SIZE; i++){
+	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i++){
 		my_pthread_t curr = -1;
 		if(current_thread != NULL)
 			curr = current_thread->tid;
@@ -64,6 +64,35 @@ void updateMemoryProtections(){
 			mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE, PROT_NONE);
 		}
 	}
+}
+
+void setupMemory(){
+	int i;
+	memory = (char*)memalign(PAGE_SIZE, MEMORY_SIZE);
+	memset(memory, 0, MEMORY_SIZE);
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
+	//initiate each page with an unallocated block the size of a page
+	for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
+		setBlockSize(i+5, PAGE_SIZE-10);
+	}		
+	i = MEMORY_SIZE-(4*PAGE_SIZE);
+	setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
+	fd = open("swapfile", O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
+	lseek(fd, (MEMORY_SIZE*2)-1, SEEK_SET);
+	write(fd, "", 1);
+	swapMemory = mmap(0, MEMORY_SIZE*2, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+	struct sigaction sa;
+	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_sigaction = handler;
+
+	if (sigaction(SIGSEGV, &sa, NULL) == -1){
+		printf("Fatal error setting up signal handler\n");
+		exit(EXIT_FAILURE);	//explode!
+	}
+
+	firstTime = 1;
 }
 
 void enqueue(my_pthread* t){
@@ -564,36 +593,12 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 
-	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
-
 	int i;
 	
-	if(!firstTime){
-		memory = (char*)memalign(PAGE_SIZE, MEMORY_SIZE);
-		memset(memory, 0, MEMORY_SIZE);
-		//initiate each page with an unallocated block the size of a page
-		for(i=0; i<MEMORY_SIZE-(4*PAGE_SIZE); i+=PAGE_SIZE){	//normal pages
-			setBlockSize(i+5, PAGE_SIZE-10);
-		}		
-		i = MEMORY_SIZE-(4*PAGE_SIZE);
-		setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
-		fd = open("swapfile", O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
-		lseek(fd, (MEMORY_SIZE*2)-1, SEEK_SET);
-		write(fd, "", 1);
-		swapMemory = mmap(0, MEMORY_SIZE*2, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if(!firstTime)
+		setupMemory();
 
-		struct sigaction sa;
-		sa.sa_flags = SA_SIGINFO;
-		sigemptyset(&sa.sa_mask);
-		sa.sa_sigaction = handler;
-
-		if (sigaction(SIGSEGV, &sa, NULL) == -1){
-			printf("Fatal error setting up signal handler\n");
-			exit(EXIT_FAILURE);	//explode!
-		}
-
-		firstTime = 1;
-	}
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 	
 	if(capacity<0){
 		fprintf(stderr, "Error on malloc in file: %s,  on line %d. Cannot allocate a negative amount of memory\n", file, line);
@@ -658,7 +663,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 
 	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
-	perror("Couldn't use mprotect");	
+		perror("Couldn't use mprotect");	
 	}
 
 	//check if pointer to be freed is within the memory block
@@ -750,6 +755,9 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 //allocates a chunk of shared memory of the given size
 void* shalloc(size_t size){
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
+
+	if(!firstTime)
+		setupMemory();
 
 	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
 		perror("Couldn't use mprotect");	

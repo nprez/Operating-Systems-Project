@@ -111,6 +111,8 @@ typedef struct my_pthread_mutex_t {
 
 void updateMemoryProtections();
 
+void setupMemory();
+
 void enqueue(my_pthread* t);
 
 my_pthread* dequeue();
