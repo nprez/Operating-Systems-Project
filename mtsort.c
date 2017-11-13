@@ -147,7 +147,7 @@ int main( int argc, char **argv )
     // Creating the List of numbers
     printf( "Number of elements: %d\n", nListSize );
 
-    pList = (int *) malloc( sizeof( int ) * nListSize );
+    pList = (int *) shalloc( sizeof( int ) * nListSize );
     for( i = 0; i < nListSize; i++ )
 //        pList[i] = random( ) % (nListSize<<1);   // random list
         pList[i] = nListSize-i;   // decreasing list  (easier to debug)
@@ -155,9 +155,9 @@ int main( int argc, char **argv )
     printf( "[BEFORE] The list is NOT sorted:\n" );
     printList( pList, nListSize );
 
-    threads  = (my_pthread_t *) malloc( sizeof(my_pthread_t) * (nListSize-1) );
-    mutexes  = (my_pthread_mutex_t *)malloc( sizeof(my_pthread_mutex_t) * nListSize );
-    pthrargs = (struct pthrarg *)malloc( sizeof(struct pthrarg) * (nListSize-1) );
+    threads  = (my_pthread_t *) shalloc( sizeof(my_pthread_t) * (nListSize-1) );
+    mutexes  = (my_pthread_mutex_t *)shalloc( sizeof(my_pthread_mutex_t) * nListSize );
+    pthrargs = (struct pthrarg *)shalloc( sizeof(struct pthrarg) * (nListSize-1) );
 
     my_pthread_mutex_init( &mutexes[0], 0 );
     for( i = 0; i < nListSize-1; i++ )

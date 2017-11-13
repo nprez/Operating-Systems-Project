@@ -680,7 +680,7 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	int i;
 	//any thread can free shared memory
 	char shared = 0;
-	if((MEMORY_SIZE / PAGE_SIZE) - pageItsIn >= 4){
+	if((MEMORY_SIZE / PAGE_SIZE) - pageItsIn <= 4){
 		if(current_thread->tid != getPageTid(pageItsIn)){
 			fprintf(stderr, "Error on free in file: %s, on line %d. Page blocked from thread.\n", file, line);
 			updateMemoryProtections();
