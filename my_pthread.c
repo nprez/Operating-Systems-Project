@@ -294,6 +294,7 @@ void scheduler(){
 
 static void handler(int sig, siginfo_t *si, void *unused){
 	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
+	exit(EXIT_FAILURE);
 }
 
 void interrupt_handler(int sig){
