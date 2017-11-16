@@ -19,12 +19,12 @@ void* inc_x(void *x_void_ptr){
 int count=0;
 int running=0;
 	
-	while(running<(MEMORY_SIZE/PAGE_SIZE)-4)
+	while(running<(MEMORY_SIZE/PAGE_SIZE))
         {
 		running++;
 		count++;
                 void *m = malloc(PAGE_SIZE-10);
-               // memset(m,0,PAGE_SIZE-10);
+                memset(m,0,PAGE_SIZE-10);
 		printf("This is the current count for malloc: %d\n", count);
         }
   
