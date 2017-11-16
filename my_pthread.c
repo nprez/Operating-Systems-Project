@@ -66,6 +66,9 @@ void updateMemoryProtections(){
 	}
 }
 
+//defined later
+void swapMemoryPages();
+
 void setupMemory(){
 	int i;
 	memory = (char*)memalign(PAGE_SIZE, MEMORY_SIZE);
@@ -312,9 +315,8 @@ void scheduler(){
 		setitimer(ITIMER_VIRTUAL, &period, NULL);
 	}
 
-	if(firstTime){	//protect and unprotect pages
-		updateMemoryProtections();
-	}
+	//swap in the necessary pages for the new thread
+	swapMemoryPages();
 	
 	__CRITICAL__ = 0; /* leaving scheduler */
 	if(current_thread!=NULL)
@@ -558,6 +560,24 @@ static my_pthread_t getPageTidSwap(unsigned int pageNum){
 	);
 }
 
+//returns the corresponding location of the given page within the swap file
+static my_pthread_t getPageLocationSwap(unsigned int pageNum){
+	return fourCharToInt(
+		swapMemory[(pageNum*(PAGE_SIZE)+4)+5],
+		swapMemory[(pageNum*(PAGE_SIZE)+4)+6],
+		swapMemory[(pageNum*(PAGE_SIZE)+4)+7],
+		swapMemory[(pageNum*(PAGE_SIZE)+4)+8]
+	);
+}
+
+//sets the corresponding location of the given page in the swap file to the given location
+static my_pthread_t setPageLocationSwap(unsigned int pageNum, unsigned int loc){
+	swapMemory[(pageNum*(PAGE_SIZE)+4)+5] = loc>>24;
+	swapMemory[(pageNum*(PAGE_SIZE)+4)+6] = (loc<<8)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE)+4)+7] = (loc<<16)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE)+4)+8] = (loc<<24)>>24;
+}
+
 //sets the tid metadata of the given page to the requested value
 static void setPageTid(unsigned int pageNum, my_pthread_t tid){
 	memory[pageNum*PAGE_SIZE+1] = tid>>24;
@@ -634,6 +654,39 @@ static char hasSpaceSwap(int pageNum, unsigned int capacity){
 		}
 	}
 	return 0;
+}
+
+//swap in the necessary pages for the new thread
+void swapMemoryPages(){
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
+
+	int i;
+	for(i=0; i<((2*MEMORY_SIZE)/PAGE_SIZE)-1; i++){
+		int loc = i*(PAGE_SIZE+4);
+		if(isAllocatedSwap(loc) && getPageTidSwap(i)==current_thread->tid){
+			int realLoc = getPageLocationSwap(i);
+			char temp[PAGE_SIZE];
+			int j;
+			for(j=0; j<PAGE_SIZE; j++){
+				temp[j] = memory[realLoc+j];
+			}
+			for(j=0; j<PAGE_SIZE; j++){
+				int offset = 0;
+				if(j>=5)
+					offset = 4;
+				memory[realLoc+j] = swapMemory[loc+j+offset];
+			}
+			for(j=0; j<PAGE_SIZE; j++){
+				int offset = 0;
+				if(j>=5)
+					offset = 4;
+				swapMemory[loc+j+offset] = temp[j];
+			}
+			setPageLocationSwap(i, realLoc);
+		}
+	}
+
+	updateMemoryProtections();
 }
 
 //our implementation of malloc
