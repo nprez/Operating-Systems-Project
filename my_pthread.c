@@ -687,7 +687,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		return NULL;
 	      }
 	    int k;
-	    for(k = 0; k < getBlockSize(i+5); k++)
+	    for(k = 0; k <PAGE_SIZE; k++)
 	      swapMemory[j+k] = memory[i+k];
 	  }
 
