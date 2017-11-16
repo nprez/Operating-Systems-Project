@@ -720,20 +720,30 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}
 	}
 	if(i==MEMORY_SIZE/PAGE_SIZE-4){   //out of non shared pages
-		//checking swap file for open space
-		int j;
-		for(j = 0; j < 2*MEMORY_SIZE / PAGE_SIZE; j++){
-			temp = getPageTidSwap(j);
-			if(!isAllocated(j*PAGE_SIZE) || (temp == curr && hasSpace(j, capacity)))
-				return &swapMemory[j+5];
-		}
 
-		//out of pages in swap file
-		if (j == 2*MEMORY_SIZE / PAGE_SIZE){
-			updateMemoryProtections();
-			__CRITICAL__ = oldCrit;
-			return NULL;
-		}
+	  //finding first spot that doesnt use that thread ID to evict
+	  for (i = 0; i < MEMORY_SIZE/ PAGE_SIZE - 4; i++)
+	    if(getPageTid(i) != curr)
+	      break;
+		
+	  //finding open spot in swapfile
+	  int j;
+	  for(j = 0; j < 2*MEMORY_SIZE / PAGE_SIZE - 1; j++){
+	    temp = getPageTidSwap(j);
+	    if(!isAllocatedSwap(j*PAGE_SIZE) || (temp == curr && hasSpaceSwap(j,capacity)))
+	      break;
+
+	    if(j == MEMORY_SIZE / PAGE_SIZE - 1)     //out of swapfile pages
+	      {
+		updateMemoryProtections();
+		__CRITICAL__ = oldCrit;
+		return NULL;
+	      }
+	    int k;
+	    for(k = 0; k <PAGE_SIZE; k++)
+	      swapMemory[j+k] = memory[i+k];
+	  }
+
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
 		setPageTid(i, curr);
