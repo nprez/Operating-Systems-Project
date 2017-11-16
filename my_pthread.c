@@ -744,7 +744,11 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}
 		int k;
 		for(k = 0; k <PAGE_SIZE; k++)
-			swapMemory[j+k] = memory[i+k];
+			if(k < 5)
+				swapMemory[j*PAGE_SIZE+k] = memory[i*PAGE_SIZE+k];
+			else
+				swapMemory[j*(PAGE_SIZE+k+4)] = memory[i*PAGE_SIZE+k];
+
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
 		setPageTid(i, curr);
