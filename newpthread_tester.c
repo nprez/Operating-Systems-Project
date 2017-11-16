@@ -19,7 +19,7 @@ void* inc_x(void *x_void_ptr){
 int count=0;
 int running=0;
 	
-	while(running<(MEMORY_SIZE/PAGE_SIZE)+10)
+	while(running<(MEMORY_SIZE/PAGE_SIZE))
         {
 		running++;
 		count++;
