@@ -154,16 +154,22 @@ int my_pthread_mutex_destroy(my_pthread_mutex_t *mutex);
 static unsigned int fourCharToInt(char a, char b, char c, char d);
 
 static my_pthread_t getPageTid(unsigned int pageNum);
+static my_pthread_t getPageTidSwap(unsigned int pageNum);
 
 static void setPageTid(unsigned int pageNum, my_pthread_t tid);
+static void setPageTidSwap(unsigned int pageNum, my_pthread_t tid);
 
 static unsigned int getBlockSize(int i);
+static unsigned int getBlockSizeSwap(int i);
 
 static void setBlockSize(int i, unsigned int capacity);
+static void setBlockSizeSwap(int i, unsigned int capacity);
 
 static char isAllocated(int i);
+static char isAllocatedSwap(int i);
 
 static char hasSpace(int pageName, unsigned int capacity);
+static char hasSpaceSwap(int pageName, unsigned int capacity);
 
 void* myallocate(int capacity, char* file, int line, char threadreq);
 

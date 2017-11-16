@@ -548,6 +548,16 @@ static my_pthread_t getPageTid(unsigned int pageNum){
 	);
 }
 
+//returns the TID of the given page within the swap file
+static my_pthread_t getPageTidSwap(unsigned int pageNum){
+	return fourCharToInt(
+		swapMemory[(pageNum*(PAGE_SIZE)+4)+1],
+		swapMemory[(pageNum*(PAGE_SIZE)+4)+2],
+		swapMemory[(pageNum*(PAGE_SIZE)+4)+3],
+		swapMemory[(pageNum*(PAGE_SIZE)+4)+4]
+	);
+}
+
 //sets the tid metadata of the given page to the requested value
 static void setPageTid(unsigned int pageNum, my_pthread_t tid){
 	memory[pageNum*PAGE_SIZE+1] = tid>>24;
@@ -556,9 +566,22 @@ static void setPageTid(unsigned int pageNum, my_pthread_t tid){
 	memory[pageNum*PAGE_SIZE+4] = (tid<<24)>>24;
 }
 
+//sets the tid metadata of the given page in the swap file to the requested value
+static void setPageTidSwap(unsigned int pageNum, my_pthread_t tid){
+	swapMemory[(pageNum*(PAGE_SIZE)+4)+1] = tid>>24;
+	swapMemory[(pageNum*(PAGE_SIZE)+4)+2] = (tid<<8)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE)+4)+3] = (tid<<16)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE)+4)+4] = (tid<<24)>>24;
+}
+
 //returns the size of the metadata pointed to by i
 static unsigned int getBlockSize(int i){
 	return fourCharToInt(memory[i+1], memory[i+2], memory[i+3], memory[i+4]);
+}
+
+//returns the size of the metadata pointed to by i in the swap file
+static unsigned int getBlockSizeSwap(int i){
+	return fourCharToInt(swapMemory[i+1], swapMemory[i+2], swapMemory[i+3], swapMemory[i+4]);
 }
 
 //sets the metadata pointed to by i's size equal to capacity
@@ -570,9 +593,23 @@ static void setBlockSize(int i, unsigned int capacity){
 	memory[i+4] = (cap<<24)>>24;
 }
 
+//sets the metadata pointed to by i's size equal to capacity in the swap file
+static void setBlockSizeSwap(int i, unsigned int capacity){
+	my_pthread_t cap = capacity;
+	swapMemory[i+1] = cap>>24;
+	swapMemory[i+2] = (cap<<8)>>24;
+	swapMemory[i+3] = (cap<<16)>>24;
+	swapMemory[i+4] = (cap<<24)>>24;
+}
+
 //checks if the metadata pointed to by i is marked as allocated
 static char isAllocated(int i){
 	return memory[i] == 1;
+}
+
+//checks if the metadata pointed to by i is marked as allocated in the swap file
+static char isAllocatedSwap(int i){
+	return swapMemory[i] == 1;
 }
 
 //checks if the given page has an unallocated block of size capacity or greater
@@ -582,6 +619,17 @@ static char hasSpace(int pageNum, unsigned int capacity){
 		i = pageNum*PAGE_SIZE;
 	for(i=i; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
 		if(!isAllocated(i) && getBlockSize(i)>=capacity){
+			return 1;
+		}
+	}
+	return 0;
+}
+
+//checks if the given page in the swap file has an unallocated block of size capacity or greater
+static char hasSpaceSwap(int pageNum, unsigned int capacity){
+	int i;
+	for(i=pageNum*PAGE_SIZE+9; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSizeSwap(i)+5){
+		if(!isAllocatedSwap(i) && getBlockSizeSwap(i)>=capacity){
 			return 1;
 		}
 	}
