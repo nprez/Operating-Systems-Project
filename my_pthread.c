@@ -713,7 +713,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		curr = current_thread->tid;
 
 	int temp;
-	for(i=0; i<MEMORY_SIZE/PAGE_SIZE-4; i++){	//try to find an open unshared page
+	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i++){	//try to find an open unshared page
 		temp = getPageTid(i);
 		if(!isAllocated(i*PAGE_SIZE) || (temp == curr && hasSpace(i, capacity))){
 			break;
@@ -721,29 +721,30 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	}
 	if(i==MEMORY_SIZE/PAGE_SIZE-4){   //out of non shared pages
 		//finding first spot that doesnt use that thread ID to evict
-		for (i = 0; i < MEMORY_SIZE/ PAGE_SIZE - 4; i++)
+		for (i = 0; i < (MEMORY_SIZE/PAGE_SIZE) - 4; i++)
 			if(getPageTid(i) != curr)
 				break;
-	if(i == MEMORY_SIZE/PAGE_SIZE-4){ 
-		updateMemoryProtections();
-		__CRITICAL__ = oldCrit;
-		return NULL;	
-	}
+		
+		if(i == (MEMORY_SIZE/PAGE_SIZE)-4){ 
+			updateMemoryProtections();
+			__CRITICAL__ = oldCrit;
+			return NULL;	
+		}
+
 		//finding open spot in swapfile
 		int j;
-		for(j = 0; j < 2*MEMORY_SIZE / PAGE_SIZE - 1; j++){
-			temp = getPageTidSwap(j);
-			if(!isAllocatedSwap(j*PAGE_SIZE+4))
+		for(j = 0; j < ((2*MEMORY_SIZE) / PAGE_SIZE) - 1; j++){
+			if(!isAllocatedSwap(j*(PAGE_SIZE+4)))
 				break;
 		}
-			if(j == MEMORY_SIZE / PAGE_SIZE - 1){	//out of swapfile pages
-				updateMemoryProtections();
-				__CRITICAL__ = oldCrit;
-				return NULL;
-			}
-			int k;
-			for(k = 0; k <PAGE_SIZE; k++)
-				swapMemory[j+k] = memory[i+k];
+		if(j == (MEMORY_SIZE / PAGE_SIZE) - 1){	//out of swapfile pages
+			updateMemoryProtections();
+			__CRITICAL__ = oldCrit;
+			return NULL;
+		}
+		int k;
+		for(k = 0; k <PAGE_SIZE; k++)
+			swapMemory[j+k] = memory[i+k];
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
 		setPageTid(i, curr);
