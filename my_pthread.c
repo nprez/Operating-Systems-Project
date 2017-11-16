@@ -747,7 +747,9 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 			if(k < 5)
 				swapMemory[j*PAGE_SIZE+k] = memory[i*PAGE_SIZE+k];
 			else
-				swapMemory[j*(PAGE_SIZE+k+4)] = memory[i*PAGE_SIZE+k];
+				swapMemory[j*(PAGE_SIZE+4)+k+4] = memory[i*PAGE_SIZE+k];
+
+		memory[i*PAGE_SIZE] = 0;
 
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
