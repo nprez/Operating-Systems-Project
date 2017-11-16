@@ -160,7 +160,7 @@ static void setPageTid(unsigned int pageNum, my_pthread_t tid);
 static void setPageTidSwap(unsigned int pageNum, my_pthread_t tid);
 
 static my_pthread_t getPageLocationSwap(unsigned int pageNum);
-static my_pthread_t setPageLocationSwap(unsigned int pageNum, unsigned int loc);
+static void setPageLocationSwap(unsigned int pageNum, unsigned int loc);
 
 static unsigned int getBlockSize(int i);
 static unsigned int getBlockSizeSwap(int i);

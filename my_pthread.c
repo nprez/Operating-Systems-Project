@@ -81,6 +81,7 @@ void setupMemory(){
 	i = MEMORY_SIZE-(4*PAGE_SIZE);
 	setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
 	fd = open("swapfile", O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
+	ftruncate(fd, 2*MEMORY_SIZE);
 	lseek(fd, (MEMORY_SIZE*2)-1, SEEK_SET);
 	write(fd, "", 1);
 	swapMemory = mmap(0, MEMORY_SIZE*2, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -314,6 +315,9 @@ void scheduler(){
 		period.it_interval.tv_usec = 100000*(4-current_thread->priority);
 		setitimer(ITIMER_VIRTUAL, &period, NULL);
 	}
+
+	if(!firstTime)
+		setupMemory();
 
 	//swap in the necessary pages for the new thread
 	swapMemoryPages();
@@ -571,7 +575,7 @@ static my_pthread_t getPageLocationSwap(unsigned int pageNum){
 }
 
 //sets the corresponding location of the given page in the swap file to the given location
-static my_pthread_t setPageLocationSwap(unsigned int pageNum, unsigned int loc){
+static void setPageLocationSwap(unsigned int pageNum, unsigned int loc){
 	swapMemory[(pageNum*(PAGE_SIZE)+4)+5] = loc>>24;
 	swapMemory[(pageNum*(PAGE_SIZE)+4)+6] = (loc<<8)>>24;
 	swapMemory[(pageNum*(PAGE_SIZE)+4)+7] = (loc<<16)>>24;
@@ -749,6 +753,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 			else
 				swapMemory[j*(PAGE_SIZE+4)+k+4] = memory[i*PAGE_SIZE+k];
 
+		setPageLocationSwap(j, i*PAGE_SIZE);
 		memory[i*PAGE_SIZE] = 0;
 
 	}
