@@ -618,10 +618,22 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 			break;
 		}
 	}
-	if(i==MEMORY_SIZE/PAGE_SIZE-4){	//out of non shared pages
-		updateMemoryProtections();
+	if(i==MEMORY_SIZE/PAGE_SIZE-4){   //out of non shared pages
+	  
+	  //checking swap file for open space
+	  int j;
+	  for(j = 0; j < 2*MEMORY_SIZE / PAGE_SIZE; j++){
+	    temp = getPageTidSwap(j);
+	    if(!isAllocated(j*PAGE_SIZE) || (temp == curr && hasSpace(j, capacity)))
+	      return &swapMemory[j+5];
+	  }
+	  
+	  //out of pages in swap file
+	  if (j == 2*MEMORY_SIZE / PAGE_SIZE){
+	    	updateMemoryProtections();
 		__CRITICAL__ = oldCrit;
 		return NULL;
+	    }
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
 		setPageTid(i, curr);
