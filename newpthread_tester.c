@@ -22,9 +22,10 @@ int running=0;
 	while(running<(MEMORY_SIZE/PAGE_SIZE)+10)
         {
 		running++;
+		count++;
                 void *m = malloc(PAGE_SIZE-10);
                 memset(m,0,PAGE_SIZE-10);
-		printf("This is the current count for malloc: %d", count);
+		printf("This is the current count for malloc: %d\n", count);
         }
   
 	
