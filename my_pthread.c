@@ -672,11 +672,11 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	  for (i = 0; i < MEMORY_SIZE/ PAGE_SIZE - 4; i++)
 	    if(getPageTid(i) != curr)
 	      break;
-	  int j;
-
+		
 	  //finding open spot in swapfile
+	  int j;
 	  for(j = 0; j < 2*MEMORY_SIZE / PAGE_SIZE - 1; j++){
-	    temp = getPageTid(j);
+	    temp = getPageTidSwap(j);
 	    if(!isAllocatedSwap(j*PAGE_SIZE) || (temp == curr && hasSpaceSwap(j,capacity)))
 	      break;
 
