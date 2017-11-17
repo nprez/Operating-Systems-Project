@@ -80,6 +80,7 @@ void setupMemory(){
 	}		
 	i = MEMORY_SIZE-(4*PAGE_SIZE);
 	setBlockSize(i, (4*PAGE_SIZE)-5);	//shared pages
+	remove("swapfile");
 	fd = open("swapfile", O_RDWR | O_CREAT | O_TRUNC, (mode_t)0600);
 	ftruncate(fd, 2*MEMORY_SIZE);
 	lseek(fd, (MEMORY_SIZE*2)-1, SEEK_SET);
