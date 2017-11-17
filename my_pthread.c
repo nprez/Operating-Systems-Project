@@ -693,6 +693,12 @@ void swapMemoryPages(){
 	updateMemoryProtections();
 }
 
+int roundUp(double num){
+  if((int)num < num)
+    return num+1;
+  return num;
+}
+
 //our implementation of malloc
 void* myallocate(int capacity, char* file, int line, char threadreq){
 	
@@ -717,8 +723,12 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		curr = current_thread->tid;
 
 	int temp;
-	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i++){	//try to find an open unshared page
+
+	//pages used by thread in one allocation
+	int pubt = 1;
+	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i+=pubt){	//try to find an open unshared page
 		temp = getPageTid(i);
+		pubt = roundUp((getBlockSize(i) + 10)/PAGE_SIZE);
 		if(!isAllocated(i*PAGE_SIZE) || (temp == curr && hasSpace(i, capacity))){
 			break;
 		}
