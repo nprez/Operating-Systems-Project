@@ -558,29 +558,29 @@ static my_pthread_t getPageTid(unsigned int pageNum){
 //returns the TID of the given page within the swap file
 static my_pthread_t getPageTidSwap(unsigned int pageNum){
 	return fourCharToInt(
-		swapMemory[(pageNum*(PAGE_SIZE)+4)+1],
-		swapMemory[(pageNum*(PAGE_SIZE)+4)+2],
-		swapMemory[(pageNum*(PAGE_SIZE)+4)+3],
-		swapMemory[(pageNum*(PAGE_SIZE)+4)+4]
+		swapMemory[(pageNum*(PAGE_SIZE+4))+1],
+		swapMemory[(pageNum*(PAGE_SIZE+4))+2],
+		swapMemory[(pageNum*(PAGE_SIZE+4))+3],
+		swapMemory[(pageNum*(PAGE_SIZE+4))+4]
 	);
 }
 
 //returns the corresponding location of the given page within the swap file
 static my_pthread_t getPageLocationSwap(unsigned int pageNum){
 	return fourCharToInt(
-		swapMemory[(pageNum*(PAGE_SIZE)+4)+5],
-		swapMemory[(pageNum*(PAGE_SIZE)+4)+6],
-		swapMemory[(pageNum*(PAGE_SIZE)+4)+7],
-		swapMemory[(pageNum*(PAGE_SIZE)+4)+8]
+		swapMemory[(pageNum*(PAGE_SIZE+4))+5],
+		swapMemory[(pageNum*(PAGE_SIZE+4))+6],
+		swapMemory[(pageNum*(PAGE_SIZE+4))+7],
+		swapMemory[(pageNum*(PAGE_SIZE+4))+8]
 	);
 }
 
 //sets the corresponding location of the given page in the swap file to the given location
 static void setPageLocationSwap(unsigned int pageNum, unsigned int loc){
-	swapMemory[(pageNum*(PAGE_SIZE)+4)+5] = loc>>24;
-	swapMemory[(pageNum*(PAGE_SIZE)+4)+6] = (loc<<8)>>24;
-	swapMemory[(pageNum*(PAGE_SIZE)+4)+7] = (loc<<16)>>24;
-	swapMemory[(pageNum*(PAGE_SIZE)+4)+8] = (loc<<24)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE+4))+5] = loc>>24;
+	swapMemory[(pageNum*(PAGE_SIZE+4))+6] = (loc<<8)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE+4))+7] = (loc<<16)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE+4))+8] = (loc<<24)>>24;
 }
 
 //sets the tid metadata of the given page to the requested value
@@ -593,10 +593,10 @@ static void setPageTid(unsigned int pageNum, my_pthread_t tid){
 
 //sets the tid metadata of the given page in the swap file to the requested value
 static void setPageTidSwap(unsigned int pageNum, my_pthread_t tid){
-	swapMemory[(pageNum*(PAGE_SIZE)+4)+1] = tid>>24;
-	swapMemory[(pageNum*(PAGE_SIZE)+4)+2] = (tid<<8)>>24;
-	swapMemory[(pageNum*(PAGE_SIZE)+4)+3] = (tid<<16)>>24;
-	swapMemory[(pageNum*(PAGE_SIZE)+4)+4] = (tid<<24)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE+4))+1] = tid>>24;
+	swapMemory[(pageNum*(PAGE_SIZE+4))+2] = (tid<<8)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE+4))+3] = (tid<<16)>>24;
+	swapMemory[(pageNum*(PAGE_SIZE+4))+4] = (tid<<24)>>24;
 }
 
 //returns the size of the metadata pointed to by i
@@ -754,7 +754,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		int k;
 		for(k = 0; k <PAGE_SIZE; k++)
 			if(k < 5)
-				swapMemory[j*PAGE_SIZE+k] = memory[i*PAGE_SIZE+k];
+				swapMemory[j*(PAGE_SIZE+4)+k] = memory[i*PAGE_SIZE+k];
 			else
 				swapMemory[j*(PAGE_SIZE+4)+k+4] = memory[i*PAGE_SIZE+k];
 
