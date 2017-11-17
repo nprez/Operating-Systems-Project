@@ -665,10 +665,13 @@ static char hasSpaceSwap(int pageNum, unsigned int capacity){
 void swapMemoryPages(){
 	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 
+	int total = 0;
+
 	int i;
 	for(i=0; i<((2*MEMORY_SIZE)/PAGE_SIZE)-1; i++){
 		int loc = i*(PAGE_SIZE+4);
 		if(isAllocatedSwap(loc) && getPageTidSwap(i)==current_thread->tid){
+			total++;
 			int realLoc = getPageLocationSwap(i);
 			char temp[PAGE_SIZE];
 			int j;
@@ -690,7 +693,8 @@ void swapMemoryPages(){
 			setPageLocationSwap(i, realLoc);
 		}
 	}
-
+	if(current_thread!=NULL)
+		printf("Total pages swapped in for tid%d: %d\n", (int)current_thread->tid, total);
 	updateMemoryProtections();
 }
 
