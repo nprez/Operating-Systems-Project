@@ -50,24 +50,28 @@ static int __CRITICAL__ = 0;
 
 static my_pthread* current_thread = NULL;
 
+//defined later
+void swapMemoryPages();
+unsigned int getNumPages(unsigned int pageNum);
+unsigned int getNumPagesSwap(unsigned int pageNum);
 
 void updateMemoryProtections(){
 	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
 		perror("Couldn't use mprotect");	
 	}
 	int i;
-	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i++){
+	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i=i){
 		my_pthread_t curr = -1;
 		if(current_thread != NULL)
 			curr = current_thread->tid;
+
+		int numPages = getNumPages(i);
 		if(memory[i*PAGE_SIZE]!=1 || getPageTid(i) != curr){
-			mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE, PROT_NONE);
+			mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE*(numPages), PROT_NONE);
 		}
+		i+=numPages;
 	}
 }
-
-//defined later
-void swapMemoryPages();
 
 void setupMemory(){
 	int i;
@@ -640,9 +644,9 @@ static char isAllocatedSwap(int i){
 //checks if the given page has an unallocated block of size capacity or greater
 static char hasSpace(int pageNum, unsigned int capacity){
 	int i = pageNum*PAGE_SIZE+5;
-	if(pageNum>=MEMORY_SIZE/PAGE_SIZE-4)
-		i = pageNum*PAGE_SIZE;
-	for(i=i; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
+	int numPages = getNumPages(i);
+
+	for(i=i; i<(pageNum+numPages)*PAGE_SIZE; i+=getBlockSize(i)+5){
 		if(!isAllocated(i) && getBlockSize(i)>=capacity){
 			return 1;
 		}
@@ -652,13 +656,26 @@ static char hasSpace(int pageNum, unsigned int capacity){
 
 //checks if the given page in the swap file has an unallocated block of size capacity or greater
 static char hasSpaceSwap(int pageNum, unsigned int capacity){
-	int i;
-	for(i=pageNum*PAGE_SIZE+9; i<(pageNum+1)*PAGE_SIZE; i+=getBlockSizeSwap(i)+5){
+	int i = pageNum*PAGE_SIZE+9;
+	int numPages = getNumPagesSwap(i);
+	for(i=i; i<(pageNum+numPages)*PAGE_SIZE; i+=getBlockSizeSwap(i)+5){
 		if(!isAllocatedSwap(i) && getBlockSizeSwap(i)>=capacity){
 			return 1;
 		}
 	}
 	return 0;
+}
+
+unsigned int getNumPages(unsigned int pageNum){
+	int i = pageNum*PAGE_SIZE;
+	int s = getBlockSize(i+5);
+	if(s<=PAGE_SIZE-10)
+		return 1;
+	
+}
+
+unsigned int getNumPagesSwap(unsigned int pageNum){
+
 }
 
 //swap in the necessary pages for the new thread
@@ -670,6 +687,8 @@ void swapMemoryPages(){
 	int i;
 	for(i=0; i<((2*MEMORY_SIZE)/PAGE_SIZE)-1; i++){
 		int loc = i*(PAGE_SIZE+4);
+		int s = getBlockSizeSwap(i)+5;
+		//come back here later
 		if(isAllocatedSwap(loc) && getPageTidSwap(i)==current_thread->tid){
 			total++;
 			int realLoc = getPageLocationSwap(i);
