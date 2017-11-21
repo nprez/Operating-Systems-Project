@@ -644,7 +644,7 @@ static char isAllocatedSwap(int i){
 //checks if the given page has an unallocated block of size capacity or greater
 static char hasSpace(int pageNum, unsigned int capacity){
 	int i = pageNum*PAGE_SIZE+5;
-	int numPages = getNumPages(i);
+	int numPages = getNumPages(pageNum);
 
 	for(i=i; i<(pageNum+numPages)*PAGE_SIZE; i+=getBlockSize(i)+5){
 		if(!isAllocated(i) && getBlockSize(i)>=capacity){
@@ -657,7 +657,7 @@ static char hasSpace(int pageNum, unsigned int capacity){
 //checks if the given page in the swap file has an unallocated block of size capacity or greater
 static char hasSpaceSwap(int pageNum, unsigned int capacity){
 	int i = pageNum*PAGE_SIZE+9;
-	int numPages = getNumPagesSwap(i);
+	int numPages = getNumPagesSwap(pageNum);
 	for(i=i; i<(pageNum+numPages)*PAGE_SIZE; i+=getBlockSizeSwap(i)+5){
 		if(!isAllocatedSwap(i) && getBlockSizeSwap(i)>=capacity){
 			return 1;
