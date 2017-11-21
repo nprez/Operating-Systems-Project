@@ -669,17 +669,13 @@ static char hasSpaceSwap(int pageNum, unsigned int capacity){
 unsigned int getNumPages(unsigned int pageNum){
 	int i = pageNum*PAGE_SIZE;
 	int s = getBlockSize(i+5);
-	if(s<=PAGE_SIZE-10)
-		return 1;
-	return 1;
+	return roundUp((s+5)/PAGE_SIZE);
 }
 
 unsigned int getNumPagesSwap(unsigned int pageNum){
-	int i = pageNum*PAGE_SIZE;
-	int s = getBlockSizeSwap(i+5);
-	if(s<=PAGE_SIZE-5)
-		return 1;
-	return 1;
+	int i = pageNum*(PAGE_SIZE+4);
+	int s = getBlockSize(i+5);
+	return roundUp((s+9)/PAGE_SIZE);
 }
 
 //swap in the necessary pages for the new thread
@@ -722,9 +718,9 @@ void swapMemoryPages(){
 }
 
 int roundUp(double num){
-  if((int)num < num)
-    return num+1;
-  return num;
+	if((int)num < num)
+		return num+1;
+	return num;
 }
 
 //our implementation of malloc
