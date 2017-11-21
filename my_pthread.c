@@ -671,11 +671,15 @@ unsigned int getNumPages(unsigned int pageNum){
 	int s = getBlockSize(i+5);
 	if(s<=PAGE_SIZE-10)
 		return 1;
-	
+	return 1;
 }
 
 unsigned int getNumPagesSwap(unsigned int pageNum){
-
+	int i = pageNum*PAGE_SIZE;
+	int s = getBlockSizeSwap(i+5);
+	if(s<=PAGE_SIZE-5)
+		return 1;
+	return 1;
 }
 
 //swap in the necessary pages for the new thread
@@ -749,10 +753,8 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	int temp;
 
 	//pages used by thread in one allocation
-	int pubt = 1;
-	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i+=pubt){	//try to find an open unshared page
+	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i+=getNumPages(i*PAGE_SIZE)){	//try to find an open unshared page
 		temp = getPageTid(i);
-		pubt = roundUp((getBlockSize(i) + 10)/PAGE_SIZE);
 		if(!isAllocated(i*PAGE_SIZE) || (temp == curr && hasSpace(i, capacity))){
 			break;
 		}

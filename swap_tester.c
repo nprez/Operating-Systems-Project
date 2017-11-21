@@ -10,8 +10,9 @@ static char yDone = 0;
 void* test(void* arg){
 	if(arg==&x){
 		my_pthread_mutex_lock(&l);
+		char* xAllocs[(int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)))];
 		while(*((int*)arg) < (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)))){
-			malloc(PAGE_SIZE-10);
+			xAllocs[*((int*)arg)] = malloc(PAGE_SIZE-10);
 			printf("X: %d\n", *((int*)arg)+1);
 			(*((int*)arg))++;
 			if(*((int*)arg)+1 == (int)(.75*((MEMORY_SIZE/PAGE_SIZE)-4))){
@@ -21,16 +22,29 @@ void* test(void* arg){
 				my_pthread_mutex_lock(&l);
 			}
 		}
+		int i;
+		for(i=0; i<(int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4))); i++){
+			int j;
+			for(j=0; j<PAGE_SIZE-10; j++)
+				xAllocs[i][j] = '\0';
+		}
 		my_pthread_mutex_unlock(&l);
 	}
 
 	else{
 		while(!xp1Done){}
 		my_pthread_mutex_lock(&l);
+		char* yAllocs[(int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)))];
 		while(*((int*)arg) < (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)))){
-			malloc(PAGE_SIZE-10);
+			yAllocs[*((int*)arg)] = malloc(PAGE_SIZE-10);
 			printf("Y: %d\n", *((int*)arg)+1);
 			(*((int*)arg))++;
+		}
+		int i;
+		for(i=0; i<(int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4))); i++){
+			int j;
+			for(j=0; j<PAGE_SIZE-10; j++)
+				yAllocs[i][j] = '\0';
 		}
 		yDone = 1;
 		my_pthread_mutex_unlock(&l);
