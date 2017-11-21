@@ -749,7 +749,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	int temp;
 
 	//pages used by thread in one allocation
-	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i+=getNumPages(i*PAGE_SIZE)){	//try to find an open unshared page
+	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i+=getNumPages(i)){	//try to find an open unshared page
 		temp = getPageTid(i);
 		if(!isAllocated(i*PAGE_SIZE) || (temp == curr && hasSpace(i, capacity))){
 			break;
