@@ -793,6 +793,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		setPageLocationSwap(j, i*PAGE_SIZE);
 		setPageTid(i, curr);
 		memory[i*PAGE_SIZE] = 1;
+		setBlockSize((i*PAGE_SIZE)+5, PAGE_SIZE-10);
 
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
