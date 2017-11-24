@@ -8,14 +8,20 @@ static char yDone = 0;
 
 //fill up memory
 void* test(void* arg){
+	int numToMake = (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)));
 	if(arg==&x){
 		my_pthread_mutex_lock(&l);
-		char* xAllocs[(int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)))];
-		while(*((int*)arg) < (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)))){
+		char *xAllocs[numToMake];
+		while(*((int*)arg) < numToMake){
 			xAllocs[*((int*)arg)] = malloc(PAGE_SIZE-10);
+			int j;
+			//test protection after allocation
+			for(j=0; j<PAGE_SIZE-10; j++){
+				xAllocs[*((int*)arg)][j] = '\0';
+			}
 			printf("X: %d\n", *((int*)arg)+1);
 			(*((int*)arg))++;
-			if(*((int*)arg)+1 == (int)(.75*((MEMORY_SIZE/PAGE_SIZE)-4))){
+			if(*((int*)arg)+1 == numToMake){
 				xp1Done = 1;
 				my_pthread_mutex_unlock(&l);
 				while(!yDone){}
@@ -23,10 +29,12 @@ void* test(void* arg){
 			}
 		}
 		int i;
-		for(i=0; i<(int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4))); i++){
+		//test protection after swap
+		for(i=0; i<numToMake; i++){
 			int j;
-			for(j=0; j<PAGE_SIZE-10; j++)
-				xAllocs[i][j] = '\0';
+			for(j=0; j<PAGE_SIZE-10; j++){
+				xAllocs[i][j] = 'X';
+			}
 		}
 		my_pthread_mutex_unlock(&l);
 	}
@@ -34,17 +42,24 @@ void* test(void* arg){
 	else{
 		while(!xp1Done){}
 		my_pthread_mutex_lock(&l);
-		char* yAllocs[(int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)))];
-		while(*((int*)arg) < (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)))){
+		char *yAllocs[numToMake];
+		while(*((int*)arg) < numToMake){
 			yAllocs[*((int*)arg)] = malloc(PAGE_SIZE-10);
+			int j;
+			//test protection after allocation
+			for(j=0; j<PAGE_SIZE-10; j++){
+				yAllocs[*((int*)arg)][j] = '\0';
+			}
 			printf("Y: %d\n", *((int*)arg)+1);
 			(*((int*)arg))++;
 		}
 		int i;
-		for(i=0; i<(int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4))); i++){
+		//test protection after all allocations
+		for(i=0; i<numToMake; i++){
 			int j;
-			for(j=0; j<PAGE_SIZE-10; j++)
-				yAllocs[i][j] = '\0';
+			for(j=0; j<PAGE_SIZE-10; j++){
+				yAllocs[i][j] = 'Y';
+			}
 		}
 		yDone = 1;
 		my_pthread_mutex_unlock(&l);
@@ -55,6 +70,8 @@ void* test(void* arg){
 int main(){
 	my_pthread_t xt = 1;
 	my_pthread_t yt = 2;
+
+	int numToMake = (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)));
 
 	my_pthread_mutex_init(&l, NULL);
 
@@ -67,7 +84,7 @@ int main(){
 	my_pthread_mutex_destroy(&l);
 
 	printf("Done\nPages created: X=%d; Y=%d; Total=%d; Expected Total=%d\n",
-		x, y, x+y, (int)(((MEMORY_SIZE/PAGE_SIZE)-4)*1.5));
+		x, y, x+y, 2*numToMake);
 	printf("MEMORY_SIZE: %d\nPAGE_SIZE: %d\nM/P=%d\n", MEMORY_SIZE, (int)PAGE_SIZE, (int)(MEMORY_SIZE/PAGE_SIZE));
 
 	return 0;

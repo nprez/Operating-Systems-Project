@@ -56,9 +56,7 @@ unsigned int getNumPages(unsigned int pageNum);
 unsigned int getNumPagesSwap(unsigned int pageNum);
 
 void updateMemoryProtections(){
-	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
-		perror("Couldn't use mprotect");	
-	}
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 	int i;
 	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i=i){
 		my_pthread_t curr = -1;
@@ -90,6 +88,9 @@ void setupMemory(){
 	lseek(fd, (MEMORY_SIZE*2)-1, SEEK_SET);
 	write(fd, "", 1);
 	swapMemory = mmap(0, MEMORY_SIZE*2, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	for(i=0; i<2*MEMORY_SIZE; i++){
+		swapMemory[i] = 0;
+	}
 
 	struct sigaction sa;
 	sa.sa_flags = SA_SIGINFO;
@@ -658,7 +659,7 @@ static char hasSpace(int pageNum, unsigned int capacity){
 static char hasSpaceSwap(int pageNum, unsigned int capacity){
 	int i = pageNum*PAGE_SIZE+9;
 	int numPages = getNumPagesSwap(pageNum);
-	for(i=i; i<(pageNum+numPages)*PAGE_SIZE; i+=getBlockSizeSwap(i)+5){
+	for(i=i; i<(pageNum+numPages)*(PAGE_SIZE+4); i+=getBlockSizeSwap(i)+5){
 		if(!isAllocatedSwap(i) && getBlockSizeSwap(i)>=capacity){
 			return 1;
 		}
@@ -675,7 +676,7 @@ unsigned int getNumPages(unsigned int pageNum){
 unsigned int getNumPagesSwap(unsigned int pageNum){
 	int i = pageNum*(PAGE_SIZE+4);
 	int s = getBlockSize(i+5);
-	return roundUp(((double)(s+14))/PAGE_SIZE);
+	return roundUp(((double)(s+14))/(PAGE_SIZE+4));
 }
 
 //swap in the necessary pages for the new thread
@@ -683,13 +684,16 @@ void swapMemoryPages(){
 	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 
 	int total = 0;
+	my_pthread_t curr = -1;
+	if(current_thread!=NULL)
+		curr = current_thread->tid;
 
 	int i;
-	for(i=0; i<((2*MEMORY_SIZE)/PAGE_SIZE)-1; i++){
+	for(i=0; i<((2*MEMORY_SIZE)/(PAGE_SIZE+4)); i++){
 		int loc = i*(PAGE_SIZE+4);
 		int s = getBlockSizeSwap(i)+5;
 		//come back here later
-		if(isAllocatedSwap(loc) && getPageTidSwap(i)==current_thread->tid){
+		if(isAllocatedSwap(loc) && getPageTidSwap(i)==curr){
 			total++;
 			int realLoc = getPageLocationSwap(i);
 			char temp[PAGE_SIZE];
@@ -755,7 +759,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 			break;
 		}
 	}
-	if(i==MEMORY_SIZE/PAGE_SIZE-4){   //out of non shared pages
+	if(i==(MEMORY_SIZE/PAGE_SIZE)-4){   //out of non shared pages
 		//finding first spot that doesnt use that thread ID to evict
 		for (i = 0; i < (MEMORY_SIZE/PAGE_SIZE) - 4; i++)
 			if(getPageTid(i) != curr)
@@ -769,24 +773,26 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 
 		//finding open spot in swapfile
 		int j;
-		for(j = 0; j < ((2*MEMORY_SIZE) / PAGE_SIZE) - 1; j++){
+		for(j = 0; j < (2*MEMORY_SIZE)/(PAGE_SIZE+4); j++){
 			if(!isAllocatedSwap(j*(PAGE_SIZE+4)))
 				break;
 		}
-		if(j == (MEMORY_SIZE / PAGE_SIZE) - 1){	//out of swapfile pages
+		if(j == ((2*MEMORY_SIZE) / (PAGE_SIZE+4))){	//out of swapfile pages
 			updateMemoryProtections();
 			__CRITICAL__ = oldCrit;
 			return NULL;
 		}
 		int k;
-		for(k = 0; k <PAGE_SIZE; k++)
-			if(k < 5)
-				swapMemory[j*(PAGE_SIZE+4)+k] = memory[i*PAGE_SIZE+k];
-			else
-				swapMemory[j*(PAGE_SIZE+4)+k+4] = memory[i*PAGE_SIZE+k];
+		for(k = 0; k <PAGE_SIZE; k++){
+			int offset = 0;
+			if(k>=5)
+				offset = 4;
+			swapMemory[(j*(PAGE_SIZE+4))+k+offset] = memory[(i*PAGE_SIZE)+k];
+		}
 
 		setPageLocationSwap(j, i*PAGE_SIZE);
-		memory[i*PAGE_SIZE] = 0;
+		setPageTid(i, curr);
+		memory[i*PAGE_SIZE] = 1;
 
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
@@ -828,10 +834,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	int oldCrit = __sync_val_compare_and_swap(&__CRITICAL__, 0, 1);
 
-	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
-		perror("Couldn't use mprotect");	
-	}
-
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 	//check if pointer to be freed is within the memory block
 	int difference = toBeFreed - ((void*)memory);
 	if(difference < 0 || difference > MEMORY_SIZE){
@@ -925,9 +928,7 @@ void* shalloc(size_t size){
 	if(!firstTime)
 		setupMemory();
 
-	if(mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE)){
-		perror("Couldn't use mprotect");	
-	}
+	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 
 	int i = MEMORY_SIZE-(4*PAGE_SIZE);
 	for(i=i; i<MEMORY_SIZE; i+=getBlockSize(i)+5){
