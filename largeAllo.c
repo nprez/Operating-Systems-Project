@@ -20,7 +20,7 @@ printf("x ptr is: %d\n", x_ptr);
 
 
 void *m = malloc(PAGE_SIZE+1);
- memset(m,0,(PAGE_SIZE+1);
+ memset(m,0,(PAGE_SIZE+1));
 
 printf("large allocation set\n");
 
