@@ -748,6 +748,13 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		__CRITICAL__ = oldCrit;
 		return NULL;
 	}
+
+	if(capacity>PAGE_SIZE-10){
+		fprintf(stderr, "Error on malloc in file: %s,  on line %d. Cannot allocate more than %d bytes\n", file, line, (int)PAGE_SIZE-10);
+		updateMemoryProtections();
+		__CRITICAL__ = oldCrit;
+		return NULL;
+	}
 	
 	my_pthread_t curr = -1;
 	if(current_thread != NULL)
