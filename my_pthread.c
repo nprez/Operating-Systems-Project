@@ -51,11 +51,11 @@ static int __CRITICAL__ = 0;
 static my_pthread* current_thread = NULL;
 
 //defined later
-void swapMemoryPages();
-unsigned int getNumPages(unsigned int pageNum);
-unsigned int getNumPagesSwap(unsigned int pageNum);
+static void swapMemoryPages();
+static unsigned int getNumPages(unsigned int pageNum);
+static unsigned int getNumPagesSwap(unsigned int pageNum);
 
-void updateMemoryProtections(){
+static void updateMemoryProtections(){
 	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 	int i;
 	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i=i){
@@ -64,18 +64,19 @@ void updateMemoryProtections(){
 			curr = current_thread->tid;
 
 		int numPages = getNumPages(i);
-		printf("Updating memory protections on page %d; ", i);
+		//printf("Updating memory protections on page %d; ", i);
 		if(memory[i*PAGE_SIZE]!=1 || getPageTid(i) != curr){
-			printf("Unable to access page %d at location %p\n, %s, %s\n", i, (void*)(&memory[(i*PAGE_SIZE)+10]), memory[i*PAGE_SIZE]!=1?"true":"false", getPageTid(i)!=curr?"true":"false");
+			//printf("Unable to access page %d at location %p\n, %s, %s\n", i, (void*)(&memory[(i*PAGE_SIZE)+10]), memory[i*PAGE_SIZE]!=1?"true":"false", getPageTid(i)!=curr?"true":"false");
 			mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE*(numPages), PROT_NONE);
 		}
-		else
-			printf("Able to access page %d at location %p\n", i, (void*)(&memory[(i*PAGE_SIZE)+10]));
+		else{
+			//printf("Able to access page %d at location %p\n", i, (void*)(&memory[(i*PAGE_SIZE)+10]));
+		}
 		i+=numPages;
 	}
 }
 
-void setupMemory(){
+static void setupMemory(){
 	int i;
 	memory = (char*)memalign(PAGE_SIZE, MEMORY_SIZE);
 	memset(memory, 0, MEMORY_SIZE);
@@ -109,7 +110,7 @@ void setupMemory(){
 	firstTime = 1;
 }
 
-void enqueue(my_pthread* t){
+static void enqueue(my_pthread* t){
 	if(t!=NULL){
 		if(t->status == THREAD_DYING){
 			__CRITICAL__ = 1;
@@ -173,7 +174,7 @@ void enqueue(my_pthread* t){
 	}
 }
 
-my_pthread* dequeue(){
+static my_pthread* dequeue(){
 	//dequeue a new thread to be run
 	if(queue3->head!=NULL){
 		node *temp = queue3->head;
@@ -213,7 +214,7 @@ my_pthread* dequeue(){
 	}
 }
 
-void scheduler(){
+static void scheduler(){
 	__CRITICAL__ = 1;
 	int p = 3;
 	if (current_thread != NULL)
@@ -342,18 +343,18 @@ static void handler(int sig, siginfo_t *si, void *unused){
 	exit(EXIT_FAILURE);
 }
 
-void interrupt_handler(int sig){
+static void interrupt_handler(int sig){
 	/* check if the thread is in a critical section */
 	if (__CRITICAL__) { return; }
 		scheduler();
 }
 
-void markDead(){
+static void markDead(){
 	current_thread->status = THREAD_DYING;
 	scheduler();
 }
 
-void thread_init(){
+static void thread_init(){
 	__CRITICAL__ = 1;
 	
 	queue1 = malloc(sizeof(queue));
@@ -671,20 +672,20 @@ static char hasSpaceSwap(int pageNum, unsigned int capacity){
 	return 0;
 }
 
-unsigned int getNumPages(unsigned int pageNum){
+static unsigned int getNumPages(unsigned int pageNum){
 	int i = pageNum*PAGE_SIZE;
 	int s = getBlockSize(i+5);
 	return roundUp(((double)(s+10))/PAGE_SIZE);
 }
 
-unsigned int getNumPagesSwap(unsigned int pageNum){
+static unsigned int getNumPagesSwap(unsigned int pageNum){
 	int i = pageNum*(PAGE_SIZE+4);
 	int s = getBlockSize(i+5);
 	return roundUp(((double)(s+14))/(PAGE_SIZE+4));
 }
 
 //swap in the necessary pages for the new thread
-void swapMemoryPages(){
+static void swapMemoryPages(){
 	mprotect(memory, MEMORY_SIZE, PROT_READ | PROT_WRITE);
 
 	int total = 0;
@@ -698,7 +699,7 @@ void swapMemoryPages(){
 		if(isAllocatedSwap(loc) && getPageTidSwap(i)==curr){
 			total++;
 			int realLoc = getPageLocationSwap(i);
-			printf("Swapping in page %d; realLoc %p\n", i, (void*)(&memory[realLoc]));
+			//printf("Swapping in page %d; realLoc %p\n", i, (void*)(&memory[realLoc]));
 			char temp[PAGE_SIZE];
 			int j;
 			for(j=0; j<PAGE_SIZE; j++){
@@ -719,12 +720,13 @@ void swapMemoryPages(){
 			setPageLocationSwap(i, realLoc);
 		}
 	}
-	if(current_thread!=NULL)
-		printf("Total pages swapped in for tid%d: %d\n", (int)current_thread->tid, total);
+	if(current_thread!=NULL){
+		//printf("Total pages swapped in for tid%d: %d\n", (int)current_thread->tid, total);
+	}
 	updateMemoryProtections();
 }
 
-int roundUp(double num){
+static int roundUp(double num){
 	if((int)num < num)
 		return num+1;
 	return num;
@@ -836,8 +838,8 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}
 	}
 
-	printf("Allocated a block of size %d\n Page Tid=%d; Current tid=%d; Page #=%d; Location=%p\n",
-		capacity, getPageTid(temp), curr, temp, (void*)(&memory[i+5]));
+	//printf("Allocated a block of size %d\n Page Tid=%d; Current tid=%d; Page #=%d; Location=%p\n",
+		//capacity, getPageTid(temp), curr, temp, (void*)(&memory[i+5]));
 	updateMemoryProtections();
 	__CRITICAL__ = oldCrit;
 

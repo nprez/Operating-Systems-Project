@@ -8,9 +8,10 @@ static char yDone = 0;
 static int errors = 0;
 static int errorList[189];
 static void *errorList2[189];
+static double fraction = 0.75;
 
 void* testX(void* arg){
-	int numToMake = (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)));
+	int numToMake = (int)(fraction*(((MEMORY_SIZE/PAGE_SIZE)-4)));
 	char* firstAlloc;
 	my_pthread_mutex_lock(&l);
 	char *xAllocs[numToMake];
@@ -59,7 +60,7 @@ void* testX(void* arg){
 }
 
 void* testY(void* arg){
-	int numToMake = (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)));
+	int numToMake = (int)(fraction*(((MEMORY_SIZE/PAGE_SIZE)-4)));
 	char* firstAlloc;
 	while(!xp1Done){}
 	my_pthread_mutex_lock(&l);
@@ -92,7 +93,7 @@ int main(){
 	my_pthread_t xt = 1;
 	my_pthread_t yt = 2;
 
-	int numToMake = (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)));
+	int numToMake = (int)(fraction*(((MEMORY_SIZE/PAGE_SIZE)-4)));
 
 	my_pthread_mutex_init(&l, NULL);
 
