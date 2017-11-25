@@ -64,9 +64,13 @@ void updateMemoryProtections(){
 			curr = current_thread->tid;
 
 		int numPages = getNumPages(i);
+		printf("Updating memory protections on page %d; ", i);
 		if(memory[i*PAGE_SIZE]!=1 || getPageTid(i) != curr){
+			printf("Unable to access page %d at location %p\n, %s, %s\n", i, (void*)(&memory[(i*PAGE_SIZE)+10]), memory[i*PAGE_SIZE]!=1?"true":"false", getPageTid(i)!=curr?"true":"false");
 			mprotect(&memory[i*PAGE_SIZE], PAGE_SIZE*(numPages), PROT_NONE);
 		}
+		else
+			printf("Able to access page %d at location %p\n", i, (void*)(&memory[(i*PAGE_SIZE)+10]));
 		i+=numPages;
 	}
 }
@@ -691,11 +695,10 @@ void swapMemoryPages(){
 	int i;
 	for(i=0; i<((2*MEMORY_SIZE)/(PAGE_SIZE+4)); i++){
 		int loc = i*(PAGE_SIZE+4);
-		int s = getBlockSizeSwap(i)+5;
-		//come back here later
 		if(isAllocatedSwap(loc) && getPageTidSwap(i)==curr){
 			total++;
 			int realLoc = getPageLocationSwap(i);
+			printf("Swapping in page %d; realLoc %p\n", i, (void*)(&memory[realLoc]));
 			char temp[PAGE_SIZE];
 			int j;
 			for(j=0; j<PAGE_SIZE; j++){
@@ -792,8 +795,9 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 
 		setPageLocationSwap(j, i*PAGE_SIZE);
 		setPageTid(i, curr);
-		memory[i*PAGE_SIZE] = 1;
-		setBlockSize((i*PAGE_SIZE)+5, PAGE_SIZE-10);
+		memory[i*PAGE_SIZE] = 1;						//set page allocated
+		memory[(i*PAGE_SIZE)+5] = 0;					//set block unallocated
+		setBlockSize((i*PAGE_SIZE)+5, PAGE_SIZE-10);	//set block size
 
 	}
 	if(!isAllocated(i*PAGE_SIZE)){	//unallocated page, give it our tid & mark as allocated
@@ -803,7 +807,7 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	
 	//allocate within page i
 	temp = i;
-	for(i=i*PAGE_SIZE+5; i<(temp+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
+	for(i=(i*PAGE_SIZE)+5; i<(temp+1)*PAGE_SIZE; i+=getBlockSize(i)+5){
 		if(!isAllocated(i) && getBlockSize(i)>=capacity){
 			memory[i] = 1;	//mark allocated
 			int oldSize = getBlockSize(i);
@@ -825,6 +829,8 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		}
 	}
 
+	printf("Allocated a block of size %d\n Page Tid=%d; Current tid=%d; Page #=%d; Location=%p\n",
+		capacity, getPageTid(temp), curr, temp, (void*)(&memory[i+5]));
 	updateMemoryProtections();
 	__CRITICAL__ = oldCrit;
 
