@@ -7,7 +7,7 @@ static char xp1Done = 0;
 static char yDone = 0;
 static int errors = 0;
 static int errorList[189];
-static int *errorList2[189];
+static void *errorList2[189];
 
 void* testX(void* arg){
 	int numToMake = (int)(.75*(((MEMORY_SIZE/PAGE_SIZE)-4)));
@@ -45,7 +45,7 @@ void* testX(void* arg){
 			printf("Address became bad later\n");
 			errors++;
 			errorList[i] = 1;
-			errorList2[i] = xAllocs[i];
+			errorList2[i] = (void*)(xAllocs[i]);
 			continue;
 		}
 		errorList[i] = 0;
