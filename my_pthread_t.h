@@ -109,29 +109,29 @@ typedef struct my_pthread_mutex_t {
 
 /* Function Declarations: */
 
-void swapMemoryPages();
+static void swapMemoryPages();
 
-unsigned int getNumPages(unsigned int pageNum);
+static unsigned int getNumPages(unsigned int pageNum);
 
-unsigned int getNumPagesSwap(unsigned int pageNum);
+static unsigned int getNumPagesSwap(unsigned int pageNum);
 
-void updateMemoryProtections();
+static void updateMemoryProtections();
 
-void setupMemory();
+static void setupMemory();
 
-void enqueue(my_pthread* t);
+static void enqueue(my_pthread* t);
 
-my_pthread* dequeue();
+static my_pthread* dequeue();
 
-void scheduler();
+static void scheduler();
 
 static void handler(int sig, siginfo_t *si, void *unused);
 
-void interrupt_handler(int sig);
+static void interrupt_handler(int sig);
 
-void markDead();
+static void markDead();
 
-void thread_init();
+static void thread_init();
 
 /* create a new thread */
 int my_pthread_create(my_pthread_t * thread, pthread_attr_t * attr, void *(*function)(void*), void * arg);
@@ -180,7 +180,7 @@ static char isAllocatedSwap(int i);
 static char hasSpace(int pageName, unsigned int capacity);
 static char hasSpaceSwap(int pageName, unsigned int capacity);
 
-int roundUp(double num);
+static int roundUp(double num);
 
 void* myallocate(int capacity, char* file, int line, char threadreq);
 
