@@ -1,6 +1,13 @@
+#define FUSE_USE_VERSION 
+
+
 #include <stdio.h>
 #include<stdlib.h>
 #include<fuse.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <time.h>
+#include <string.h>
 
 struct dirent{
   int abc;
