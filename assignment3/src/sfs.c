@@ -29,6 +29,24 @@
 
 #include "log.h"
 
+#define BlockSize 999999 //idk what size yet
+
+ struct inode {
+               u32     i_dev;         /* ID of device containing file */
+               u32     i_ino;         /* Inode number */
+               u32   i_mode;        /* File type and mode */
+               u32   i_nlink;       /* Number of hard links */
+               u32    i_uid;         /* User ID of owner */
+               u32    i_gid;         /* Group ID of owner */
+               u32   i_rdev;        /* Device ID (if special file) */
+               u32    i_size;        /* Total size, in bytes */
+               u32 i_blksize;     /* Block size for filesystem I/O */
+               u32 i_blocks;      /* Number of 512B blocks allocated */
+	       struct inode* iArray[BlockSize/sizeof(inode)];  /* Array of inodes */
+	 	FILE* fArray[100];
+ }
+
+
 
 ///////////////////////////////////////////////////////////
 //
@@ -51,6 +69,11 @@ void *sfs_init(struct fuse_conn_info *conn)
     fprintf(stderr, "in bb-init\n");
     log_msg("\nsfs_init()\n");
     
+
+	//open disk 
+	open_disk(sfs_data->diskfile);
+	
+	
     log_conn(conn);
     log_fuse_context(fuse_get_context());
 
