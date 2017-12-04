@@ -1,4 +1,4 @@
-#define FUSE_USE_VERSION 
+#define FUSE_USE_VERSION 21
 
 
 #include <stdio.h>
