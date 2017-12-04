@@ -759,9 +759,9 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 	      if(roundUp((double) capacity / PAGE_SIZE) != roundUp((double) (capacity-i) / PAGE_SIZE))
 		break;
 	    }
-	  capacity +=i;
+	  capacity += i;
 	  if (capacity%PAGE_SIZE > 5 && capacity%PAGE_SIZE < 10){
-	    for(i = 0; i < 5; i++){
+	    for(i = 1; i < 5; i++){
 	      if((capacity+i)%PAGE_SIZE == 10){
 		capacity += i;
 	      }
