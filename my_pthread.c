@@ -763,46 +763,13 @@ void* myallocate(int capacity, char* file, int line, char threadreq){
 		curr = current_thread->tid;
 
 	int temp;
-	
-	//gives it at most 4 more bytes so that if it takes another page, it allocates the first 5 bytes of new page if not already done so
-	if(capacity + 10 > PAGE_SIZE){
-	  for(i = 1; i < 5; i++)
-	    {
-	      if(roundUp((double) capacity / PAGE_SIZE) != roundUp((double) (capacity-i) / PAGE_SIZE))
-		break;
-	    }
-	  capacity +=i;
-	  if (capacity%PAGE_SIZE > 5 && capacity%PAGE_SIZE < 10){
-	    for(i = 0; i < 5; i++){
-	      if((capacity+i)%PAGE_SIZE == 10){
-		capacity += i;
-	      }
-	    }
-	  }
-	}
 
+	//pages used by thread in one allocation
 	for(i=0; i<(MEMORY_SIZE/PAGE_SIZE)-4; i+=getNumPages(i)){	//try to find an open unshared page
 		temp = getPageTid(i);
 		if(!isAllocated(i*PAGE_SIZE) || (temp == curr && hasSpace(i, capacity))){
-		  if(capacity+10 < PAGE_SIZE)
 			break;
-		  else{
-		    int x;
-		    for(x = 0;x < roundUp((double)(capacity=10)/PAGE_SIZE); x++){
-		      if(isAllocated((i+x)*PAGE_SIZE))
-			 break;
-		    }
-		      if(x == roundUp((double)(capacity=10)/PAGE_SIZE)){
-			memory[i*PAGE_SIZE] = 1;
-			setPageTid(i, curr);
-			memory[i*PAGE_SIZE + 5] = 1;
-			setBlockSize(i*PAGE_SIZE+5,capacity);
-			return &memory[i*PAGE_SIZE+10];
-		      }
-			
-		  }
 		}
-
 	}
 	if(i==(MEMORY_SIZE/PAGE_SIZE)-4){   //out of non shared pages
 		//finding first spot that doesnt use that thread ID to evict
@@ -918,36 +885,8 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 	int bound = (pageItsIn + 1)*PAGE_SIZE;
 	if(shared)
 		bound = MEMORY_SIZE;
-
-	//for large allocation freeing
-	int pageNums = roundUp((double)getBlockSize(i) / PAGE_SIZE);
-	printf("%d\n", pageNums);
-	if(&memory[i+5] == toBeFreed && pageNums > 1){
-	  if(!isAllocated(i)){
-	    fprintf(stderr, "Error on free in file: %s, on line %d. Address alread freed.\n",file,line);
-	    updateMemoryProtections();
-	    __CRITICAL__ = oldCrit;
-	    return;
-	  }
-	  memory[i] = 0;
-	  int x;
-	  for(x = 0; x <pageNums; x++){
-	    memory[(i-5)+x*PAGE_SIZE] = 0;
-	  }
-	  if(!isAllocated(i+getBlockSize(i)+5)){
-	    setBlockSize(i,getBlockSize(i)+5+getBlockSize(i+getBlockSize(i)+5));
-	  }
-	  if((getBlockSize(i) + 10)%PAGE_SIZE != 0){
-	    memory[(pageItsIn+pageNums)*PAGE_SIZE] = 1; //set tid flag
-	    setPageTid(pageItsIn+pageNums,getPageTid(pageItsIn)); // set tid
-	    memory[(pageItsIn+pageNums)*PAGE_SIZE+5] = 0; //set isallocated flag
-	    setBlockSize((pageItsIn+pageNums)*PAGE_SIZE+5, (i+getBlockSize(i)+5) - (pageItsIn+pageNums)*PAGE_SIZE); //set capacity
-	    }
-	  return;
-	}
-
 	//looking at beginning of allocated blocks within the page is the location being pointed to
-	  for(i = i; i < bound; i += getBlockSize(i)+5){
+	for(i = i; i < bound; i += getBlockSize(i)+5){
 		if(isAllocated(i))
 			allocatedBlocks++;
 
@@ -966,7 +905,6 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 				capacity += getBlockSize(i+capacity+5) + 5;
 				setBlockSize(i,capacity);
 			}
-			
 			//adding previous free block together with current free block if it exists
 			int oldI = i;
 			int prevBlockSize = -1;
@@ -985,7 +923,8 @@ void mydeallocate(void* toBeFreed, char* file, int line, char threadreq){
 			}
 			found = 1;
 		}
-	  }
+	}
+
 	//free the page
 	if(!shared && (allocatedBlocks == 1)){
 		setPageTid(pageItsIn, 0);
