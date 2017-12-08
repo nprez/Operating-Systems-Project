@@ -36,6 +36,7 @@
 struct blockArray{
   void* ptr[inodeArraySize];
   int isInode[inodeArraySize];
+}
 
  typedef struct inode_ {
                u32     i_dev;         /* ID of device containing file */
