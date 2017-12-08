@@ -31,7 +31,13 @@
 
 #define BlockSize 999999 //idk what size yet
 
- struct inode {
+#define inodeArraySize 512
+
+struct blockArray{
+  void* ptr[inodeArraySize];
+  int isInode[inodeArraySize];
+
+ typedef struct inode_ {
                u32     i_dev;         /* ID of device containing file */
                u32     i_ino;         /* Inode number */
                u32   i_mode;        /* File type and mode */
@@ -42,12 +48,12 @@
                u32    i_size;        /* Total size, in bytes */
                u32 i_blksize;     /* Block size for filesystem I/O */
                u32 i_blocks;      /* Number of 512B blocks allocated */
-	       struct inode* iArray[BlockSize/sizeof(inode)];  /* Array of inodes */
-	 	FILE* fArray[100];
- }
+   struct blockArray* next;
+ }inode;
 
+int inodeNum = 0;
 
-
+inode* head;
 ///////////////////////////////////////////////////////////
 //
 // Prototypes for all these functions, and the C-style comments,
