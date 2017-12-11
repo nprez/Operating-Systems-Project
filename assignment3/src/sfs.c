@@ -37,8 +37,8 @@
 typedef struct block_{
   int type;	//-1=error; 0=directory; 1=file; 2=block
   stat s;
-  struct block_* p[];
-
+  struct block_* p[(512 - (sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)];
+  char path[255];
   /*
   dev_t     st_dev   Device ID of device containing file.
   ino_t     st_ino     File serial number.
@@ -60,6 +60,7 @@ typedef struct block_{
   */
 } block;
 
+
 ///////////////////////////////////////////////////////////
 //
 // Prototypes for all these functions, and the C-style comments,
@@ -80,8 +81,29 @@ void *sfs_init(struct fuse_conn_info *conn){
   fprintf(stderr, "in bb-init\n");
   log_msg("\nsfs_init()\n");
 
-	//open disk
-	open_disk(sfs_data->diskfile);
+  //open disk
+  open_disk(sfs_data->diskfile);
+
+  block* newBlock = (block*)malloc(sizeof(block));
+  newBlock->p = NULL;
+  newBlock->type = -1;
+  newBlock->stat->st_dev = 0;
+  newBlock->stat->st.ino = 0;
+  newBlock->stat->st_mode = 0;
+  newBlock->stat->st_nlink = 0;
+  newBlock->stat->st_uid = 0;
+  newBlock->stat->st_gid = 0;
+  newBlock->stat->st_rdev = 0;
+  newBlock->stat->st_size = 0;
+  newBlock->stat->st_blksize = 0;
+  newBlock->stat->st_blocks = 0;
+  newBlock->stat->st_atime = 0;
+  newBlock->stat->st_mtime = 0;
+  newBlock->stat->st_ctime = 0;
+
+  int i;
+  for(i = 0; i <= (FileSize/BlockSize);i++)
+    block_write(i,newBlock);
 
   log_conn(conn);
   log_fuse_context(fuse_get_context());
@@ -97,6 +119,7 @@ void *sfs_init(struct fuse_conn_info *conn){
  * Introduced in version 2.3
  */
 void sfs_destroy(void *userdata){
+  disk_close();
   log_msg("\nsfs_destroy(userdata=0x%08x)\n", userdata);
 }
 
