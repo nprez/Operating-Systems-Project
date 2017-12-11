@@ -22,6 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
@@ -29,32 +30,36 @@
 
 #include "log.h"
 
-#define BlockSize 999999 //idk what size yet
+#define BlockSize 512
 
-#define inodeArraySize 512
+#define FileSize 16777216	//16MB
 
-struct blockArray{
-  void* ptr[inodeArraySize];
-  int isInode[inodeArraySize];
-}
+typedef struct block_{
+  int type;
+  stat s;
+  struct block_* p[];
 
-typedef struct inode_{
-  u32     i_dev;         /* ID of device containing file */
-  u32     i_ino;         /* Inode number */
-  u32   i_mode;        /* File type and mode */
-  u32   i_nlink;       /* Number of hard links */
-  u32    i_uid;         /* User ID of owner */
-  u32    i_gid;         /* Group ID of owner */
-  u32   i_rdev;        /* Device ID (if special file) */
-  u32    i_size;        /* Total size, in bytes */
-  u32 i_blksize;     /* Block size for filesystem I/O */
-  u32 i_blocks;      /* Number of 512B blocks allocated */
-  struct blockArray* next;
-} inode;
+  /*
+  dev_t     st_dev   Device ID of device containing file.
+  ino_t     st_ino     File serial number.
+  mode_t    st_mode    Mode of file (see below).
+  nlink_t   st_nlink   Number of hard links to the file.
+  uid_t     st_uid     User ID of file.
+  gid_t     st_gid     Group ID of file.
+  dev_t     st_rdev    Device ID (if file is character or block special).
+  off_t     st_size    For regular files, the file size in bytes.
+                       For symbolic links, the length in bytes of the
+                       pathname contained in the symbolic link.
+  time_t    st_atime   Time of last access.
+  time_t    st_mtime   Time of last data modification.
+  time_t    st_ctime   Time of last status change.
+  blksize_t st_blksize A file system-specific preferred I/O block size for
+                       this object. In some file system types, this may
+                       vary from file to file.
+  blkcnt_t  st_blocks  Number of blocks allocated for this object.
+  */
+} block;
 
-int inodeNum = 0;
-
-inode* head;
 ///////////////////////////////////////////////////////////
 //
 // Prototypes for all these functions, and the C-style comments,
@@ -75,7 +80,7 @@ void *sfs_init(struct fuse_conn_info *conn){
   fprintf(stderr, "in bb-init\n");
   log_msg("\nsfs_init()\n");
 
-	//open disk 
+	//open disk
 	open_disk(sfs_data->diskfile);
 
   log_conn(conn);
@@ -274,7 +279,7 @@ int sfs_opendir(const char *path, struct fuse_file_info *fi){
  */
 int sfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset,
 	       struct fuse_file_info *fi){
-  
+ 
   int retstat = 0;
 
   return retstat;
