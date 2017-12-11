@@ -91,8 +91,8 @@ void *sfs_init(struct fuse_conn_info *conn){
   newBlock->stat->st.ino = 0;
   newBlock->stat->st_mode = 0;
   newBlock->stat->st_nlink = 0;
-  newBlock->stat->st_uid = 0;
-  newBlock->stat->st_gid = 0;
+  newBlock->stat->st_uid = getuid();
+  newBlock->stat->st_gid = getegid();
   newBlock->stat->st_rdev = 0;
   newBlock->stat->st_size = 0;
   newBlock->stat->st_blksize = 0;
