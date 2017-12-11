@@ -35,7 +35,7 @@
 #define FileSize 16777216	//16MB
 
 typedef struct block_{
-  int type;
+  int type;	//-1=error; 0=directory; 1=file; 2=block
   stat s;
   struct block_* p[];
 
