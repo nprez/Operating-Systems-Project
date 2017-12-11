@@ -37,8 +37,8 @@
 typedef struct block_{
   int type;
   stat s;
-  struct block_* p[(512 - (sizeof(stat)+sizeof(int)))/sizeof(struct block_*)];
-
+  struct block_* p[(512 - (sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)];
+  char path[255];
   /*
   dev_t     st_dev   Device ID of device containing file.
   ino_t     st_ino     File serial number.
@@ -119,6 +119,7 @@ void *sfs_init(struct fuse_conn_info *conn){
  * Introduced in version 2.3
  */
 void sfs_destroy(void *userdata){
+  disk_close();
   log_msg("\nsfs_destroy(userdata=0x%08x)\n", userdata);
 }
 
