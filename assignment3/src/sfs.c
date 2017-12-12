@@ -99,8 +99,8 @@ void *sfs_init(struct fuse_conn_info *conn){
   newBlock->s.st_ino = 0;
   newBlock->s.st_mode = 0;
   newBlock->s.st_nlink = 0;
-  newBlock->s.st_uid = getuid();
-  newBlock->s.st_gid = getegid();
+  newBlock->s.st_uid = 0;
+  newBlock->s.st_gid = 0;
   newBlock->s.st_rdev = 0;
   newBlock->s.st_size = 0;
   newBlock->s.st_blksize = 0;
@@ -116,7 +116,7 @@ void *sfs_init(struct fuse_conn_info *conn){
   log_conn(conn);
   log_fuse_context(fuse_get_context());
 
-  
+  free(newBlock);
   
   lstat("/", exampleBuf);
 
@@ -131,6 +131,30 @@ void *sfs_init(struct fuse_conn_info *conn){
  * Introduced in version 2.3
  */
 void sfs_destroy(void *userdata){
+  block* newBlock = (block*)malloc(sizeof(block));
+  //newBlock->p = NULL;
+  newBlock->type = -1;
+  newBlock->path[0] = '\0';
+  newBlock->s.st_dev = 0;
+  newBlock->s.st_ino = 0;
+  newBlock->s.st_mode = 0;
+  newBlock->s.st_nlink = 0;
+  newBlock->s.st_uid = 0;
+  newBlock->s.st_gid = 0;
+  newBlock->s.st_rdev = 0;
+  newBlock->s.st_size = 0;
+  newBlock->s.st_blksize = 0;
+  newBlock->s.st_blocks = 0;
+  newBlock->s.st_atime = 0;
+  newBlock->s.st_mtime = 0;
+  newBlock->s.st_ctime = 0;
+
+  int i;
+  for(i = 0; i <= (FileSize/BlockSize);i++)
+    block_write(i,newBlock);
+
+  free(newBlock);
+
   disk_close();
   log_msg("\nsfs_destroy(userdata=0x%08x)\n", userdata);
 }
@@ -198,6 +222,8 @@ int sfs_getattr(const char *path, struct stat *statbuf){
   statbuf->st_mtime = newBlock->s.st_mtime;
   statbuf->st_ctime = newBlock->s.st_ctime;
   
+  free(newBlock);
+
   log_msg("\nsfs_getattr(path=\"%s\", statbuf=0x%08x)\n",
   path, statbuf);
 
