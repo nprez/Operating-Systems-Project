@@ -232,8 +232,12 @@ int retstat = 0;
 /** Remove a file */
 int sfs_unlink(const char *path){
   int retstat = 0;
+  
   log_msg("sfs_unlink(path=\"%s\")\n", path);
-
+  retstat = unlink(path);
+	if(restat==-1){
+	//failure
+	}
   return retstat;
 }
 
