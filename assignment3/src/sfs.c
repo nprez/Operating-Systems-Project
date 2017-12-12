@@ -34,11 +34,13 @@
 
 #define FileSize 16777216	//16MB
 
+struct sfs_state* sfs_data;
+
 typedef struct block_{
   int type;	//-1=error; 0=directory; 1=file; 2=block
-  stat s;
-  struct block_* p[(512 - (sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)];
+  struct stat s;
   char path[255];
+  struct block_* p[(512 - (sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)];
   /*
   dev_t     st_dev     Device ID of device containing file.
   ino_t     st_ino     File serial number.
@@ -82,24 +84,25 @@ void *sfs_init(struct fuse_conn_info *conn){
   log_msg("\nsfs_init()\n");
 
   //open disk
-  open_disk(sfs_data->diskfile);
+  disk_open(sfs_data->diskfile);
 
   block* newBlock = (block*)malloc(sizeof(block));
-  newBlock->p = NULL;
+  //newBlock->p = NULL;
   newBlock->type = -1;
-  newBlock->stat->st_dev = 0;
-  newBlock->stat->st.ino = 0;
-  newBlock->stat->st_mode = 0;
-  newBlock->stat->st_nlink = 0;
-  newBlock->stat->st_uid = getuid();
-  newBlock->stat->st_gid = getegid();
-  newBlock->stat->st_rdev = 0;
-  newBlock->stat->st_size = 0;
-  newBlock->stat->st_blksize = 0;
-  newBlock->stat->st_blocks = 0;
-  newBlock->stat->st_atime = 0;
-  newBlock->stat->st_mtime = 0;
-  newBlock->stat->st_ctime = 0;
+  newBlock->path[0] = '\0';
+  newBlock->s.st_dev = 0;
+  newBlock->s.st_ino = 0;
+  newBlock->s.st_mode = 0;
+  newBlock->s.st_nlink = 0;
+  newBlock->s.st_uid = getuid();
+  newBlock->s.st_gid = getegid();
+  newBlock->s.st_rdev = 0;
+  newBlock->s.st_size = 0;
+  newBlock->s.st_blksize = 0;
+  newBlock->s.st_blocks = 0;
+  newBlock->s.st_atime = 0;
+  newBlock->s.st_mtime = 0;
+  newBlock->s.st_ctime = 0;
 
   int i;
   for(i = 0; i <= (FileSize/BlockSize);i++)
@@ -345,7 +348,6 @@ void sfs_usage(){
 
 int main(int argc, char *argv[]){
   int fuse_stat;
-  struct sfs_state *sfs_data;
 
   // sanity checking on the command line
   if ((argc < 3) || (argv[argc-2][0] == '-') || (argv[argc-1][0] == '-'))
