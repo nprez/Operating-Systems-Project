@@ -247,34 +247,35 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   log_msg("\nsfs_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
     path, mode, fi);
 
-for(int i=0;i <= (FileSize/BlockSize);i++){
-    if(block.type==-1){
-            
-      char buf[BlockSize];
-      block_read(i, (void*) buf);
+  int i;
+  for(i=0;i <= (FileSize/BlockSize);i++){
+    char buf[BlockSize];
+    block_read(i, (void*) buf);
+    block* b = (block*)buf;
+    if(b->type==-1){
+      b->type=1;
+      b->s.st_mode= mode;
+      b->s.st_uid = getuid();
+      b->s.st_gid = getegid();
+      memcpy(b->path, path, 255);
       
-      block->type=1;
-      block->s.st_mode= mode;
-      block->s.st_uid = getuid();
-      block->s.st_gid = getegid();
-      memcpy(block.path, path, 255);
-      
-      for(int j=0;j <= (FileSize/BlockSize);j++){
-        if(block.type==-1){
+      int j;
+      for(j=0;j <= (FileSize/BlockSize);j++){
+        if(b->type==-1){
         //block.p[0]
         
         block_write(j, (const void*) buf);
-        block->type=2;
+        b->type=2;
         
         
         }else{
             //could not find free block
-         return -1
+         return -1;
         }
       }
       
     }
-}
+  }
     
   return retstat;
 }
@@ -283,7 +284,8 @@ for(int i=0;i <= (FileSize/BlockSize);i++){
 int sfs_unlink(const char *path){
   int retstat = 0;
   int i;
-  int j =0; 
+  int j =0;
+  int firstTime = 1;
   block* ptr;
   if (path[j] == '/')
     j++;
