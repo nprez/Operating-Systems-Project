@@ -40,7 +40,7 @@ typedef struct block_{
   struct block_* p[(512 - (sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)];
   char path[255];
   /*
-  dev_t     st_dev   Device ID of device containing file.
+  dev_t     st_dev     Device ID of device containing file.
   ino_t     st_ino     File serial number.
   mode_t    st_mode    Mode of file (see below).
   nlink_t   st_nlink   Number of hard links to the file.
