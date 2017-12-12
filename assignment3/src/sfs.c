@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+//#include <fuse_common.h>
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
@@ -217,10 +218,15 @@ int sfs_getattr(const char *path, struct stat *statbuf){
  * Introduced in version 2.5
  */
 int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
-  int retstat = 0;
+int retstat = 0;
+
+  int fd;
+  fd = creat(path,mode);
+  fi->fh = fd;
+		
   log_msg("\nsfs_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
     path, mode, fi);
-
+	
   return retstat;
 }
 
