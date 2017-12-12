@@ -31,13 +31,13 @@
 #include "log.h"
 
 #define BlockSize 512
-
+#define BlockArraySize (512-(sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)
 #define FileSize 16777216	//16MB
 
 typedef struct block_{
   int type;
   stat s;
-  struct block_* p[(512 - (sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)];
+  struct block_* p[BlockArraySize];
   char path[255];
   /*
   dev_t     st_dev   Device ID of device containing file.
@@ -131,8 +131,62 @@ void sfs_destroy(void *userdata){
  */
 int sfs_getattr(const char *path, struct stat *statbuf){
   int retstat = 0;
-  char fpath[PATH_MAX];
+  //char fpath[PATH_MAX];
 
+
+  int i;
+  int j = 0;
+  int firstTime = 1;
+  if(path[j] == '/')
+    j = 1;
+  for(i = 1; i < PATH_MAX; i++){
+    if (path[i] == '/'){
+      if(i-j == 1)
+	return -1;
+      char word[i-j];
+      int k;
+      for(k = j; k < i; k++)
+	word[k-j] = path[k];
+      int foundIt = 0;
+      block* newBlock = (block*)malloc(sizeof(block));
+      int a;
+      if(firstTime == 1){
+	for(a = 0; a < (FileSize/BlockSize); a++){
+	  block_read(i,newBlock);
+	  if (newBlock->path == word){
+	    firstTime = 0;
+	    foundIt = 1;
+	    break;
+	  }
+	}
+      }
+      else{
+	for(a = 0; a < BlockArraySize; a++){
+	  if(newBlock->p[a]->path == word){
+	    newBlock = newBlock->p[a];
+	    foundIt = 1;
+	    break;
+	  }
+	}
+      }
+      if(foundIt == 0)
+	return -1;
+      j = i+1;	
+    }
+  }
+
+  statbuf->st_ino = newBlock->stat->st_ino;
+  statbuf->st_mode = newBlock->stat->st_mode;
+  statbuf->st_nlink = newBlock->stat->st_nlink;
+  statbuf->st_uid = newBlock->stat->st_uid;
+  statbuf->st_gid = newBlock->stat->st_gid;
+  statbuf->st_rdev = newBlock->stat->st_rdev;
+  statbuf->st_size = newBlock->stat->st_size;
+  statbuf->st_blocks = newBlock->stat->st_blocks;
+  statbuf->st_atime = newBlock->stat->st_atime;
+  statbuf->st_mtime = newBlock->stat->st_mtime;
+  statbuf->st_ctime = newBlock->stat->st_ctime;
+  
   log_msg("\nsfs_getattr(path=\"%s\", statbuf=0x%08x)\n",
   path, statbuf);
 
