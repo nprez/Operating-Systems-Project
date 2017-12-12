@@ -370,9 +370,34 @@ int sfs_opendir(const char *path, struct fuse_file_info *fi){
 int sfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset,
          struct fuse_file_info *fi){
  
-  int retstat = 0;
+  //int retstat = 0;
+  char* name = malloc(strlen(path)+1);
+  name[strlen(path)] = '\0';
+  strcpy(name, path);
+  char* ptr = strchr(name, '/');
+  while(ptr!=NULL){
+    if(ptr==&(name[strlen(name)-1]))
+      break;
+    name = &(ptr[1]);
+    ptr = strchr(name, '/');
+  }
+  if(ptr==&(name[strlen(name)-1]))
+    name[strlen(name)-1] = '\0';
+  /** Function to add an entry in a readdir() operation
+ *
+ * @param buf the buffer passed to the readdir() operation
+ * @param name the file name of the directory entry
+ * @param stat file attributes, can be NULL
+ * @param off offset of the next entry or zero
+ * @return 1 if buffer is full, zero otherwise
+ */
+/*typedef int (*fuse_fill_dir_t) (void *buf, const char *name,
+        const struct stat *stbuf, off_t off);*/
+  int ret = filler(buf, name, NULL, offset);
 
-  return retstat;
+  free(name);
+
+  return ret;
 }
 
 /** Release directory
