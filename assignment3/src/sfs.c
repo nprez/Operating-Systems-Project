@@ -63,7 +63,7 @@ typedef struct block_{
 } block;
 
 
-struct stat exampleBuf;
+struct stat* exampleBuf;
 //int lstat(const char *pathname, struct stat *statbuf);
 
 ///////////////////////////////////////////////////////////
@@ -116,7 +116,7 @@ void *sfs_init(struct fuse_conn_info *conn){
 
 	
 	
-  lstat("/", examplebBuf);
+  lstat("/", exampleBuf);
 
   return SFS_DATA;
 }
