@@ -33,7 +33,7 @@
 
 #define BlockSize 512
 #define BlockArraySize (512-(sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)
-#define FileSize 16777216	//16MB
+#define FileSize 16777216  //16MB
 
 struct sfs_state* sfs_data;
 
@@ -116,8 +116,8 @@ void *sfs_init(struct fuse_conn_info *conn){
   log_conn(conn);
   log_fuse_context(fuse_get_context());
 
-	
-	
+  
+  
   lstat("/", exampleBuf);
 
   return SFS_DATA;
@@ -182,7 +182,7 @@ int sfs_getattr(const char *path, struct stat *statbuf){
       }
       if(foundIt == 0)
         return -1;
-      j = i+1;	
+      j = i+1;  
     }
   }
 
@@ -222,10 +222,10 @@ int retstat = 0;
   int fd;
   fd = creat(path,mode);
   fi->fh = fd;
-		
+    
   log_msg("\nsfs_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
     path, mode, fi);
-	
+  
   return retstat;
 }
 
@@ -305,7 +305,7 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
  * Changed in version 2.2
  */
 int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
-	     struct fuse_file_info *fi){
+       struct fuse_file_info *fi){
   int retstat = 0;
   log_msg("\nsfs_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
@@ -371,7 +371,7 @@ int sfs_opendir(const char *path, struct fuse_file_info *fi){
  * Introduced in version 2.3
  */
 int sfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset,
-	       struct fuse_file_info *fi){
+         struct fuse_file_info *fi){
  
   int retstat = 0;
 
