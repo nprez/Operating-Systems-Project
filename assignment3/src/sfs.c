@@ -151,7 +151,7 @@ int sfs_getattr(const char *path, struct stat *statbuf){
   int firstTime = 1;
   if(path[j] == '/')
     j = 1;
-  for(i = 1; i < PATH_MAX; i++){
+  for(i = 1; i < strlen(path); i++){
     if (path[i] == '/'){
       if(i-j == 1)
         return -1;
@@ -228,6 +228,65 @@ int retstat = 0;
 /** Remove a file */
 int sfs_unlink(const char *path){
   int retstat = 0;
+  int i;
+  int j =0; 
+  block* ptr;
+  if (path[j] == '/')
+    j++;
+  for(i = 1; i < strlen(path); i++){
+    if(i == '/' || i == (strlen(path)-1)){
+      if(i-j == 1)
+	return -1;
+      char word[i-j];
+      int k;
+      for (k = j; k < i; k++)
+	word[k-j] = word[k];
+      int foundIt = 0;
+      block* newBlock = (block*)malloc(sizeof(block));
+      if(firstTime == 1){
+	for(k = 0; k < (FileSize/BlockSize); k++){
+	  block_read(i,newBlock);
+	  if(newBlock->path == word){
+	    firstTime = 0;
+	    foundIt = 1;
+	    break;
+	  }
+	}
+      }
+      else if(i != (strlen(path)-1)){
+	for(k = 0; k < newBlock->s.st_blocks; k++){
+	  if(newBlock->p[k]->path == word){
+	    newBlock = newBlock->p[k];
+	    foundIt = 1;
+	    break;
+	  }
+	}
+      }
+      else if(i == (strlen(path)-1)){
+	for(k = 0; k < newBlock->s.st_blocks; k++){
+	  int found = 0;
+	  if(newBlock->p[k]->path == word){
+	    found = 1;
+	    ptr = newBlock->p[k];
+	    int a;
+	    for(a = 0; a < ptr->s.st_blocks; a++)
+	      ptr->p[a]->type = -1;
+	  }
+	  if(found == 1){
+	    if(k != newBlock->s.st_blocks)
+	      newBlock->p[k] = newBlock->p[k+1];
+	    else{
+	      newBlock->p[k] = NULL;
+	      newBlock->s.st_blocks--;
+	    }
+	  }
+	}
+      }
+      if(foundIt == 0)
+	return -1;
+      j=i+1;
+    }
+  }
   
   log_msg("sfs_unlink(path=\"%s\")\n", path);
 
