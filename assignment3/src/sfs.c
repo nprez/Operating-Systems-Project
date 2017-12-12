@@ -162,7 +162,7 @@ int sfs_getattr(const char *path, struct stat *statbuf){
       int foundIt = 0;
       int a;
       if(firstTime == 1){
-		    for(a = 0; a < (FileSize/BlockSize); a++){
+        for(a = 0; a < (FileSize/BlockSize); a++){
           block_read(i,newBlock);
           if (newBlock->path == word){
             firstTime = 0;
