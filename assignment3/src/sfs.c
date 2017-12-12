@@ -63,6 +63,9 @@ typedef struct block_{
 } block;
 
 
+struct stat exampleBuf;
+int lstat("/../../../../CS416-Assignment-1/assignment3/src", examplebBuf);
+
 ///////////////////////////////////////////////////////////
 //
 // Prototypes for all these functions, and the C-style comments,
