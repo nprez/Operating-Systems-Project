@@ -99,8 +99,8 @@ void *sfs_init(struct fuse_conn_info *conn){
   newBlock->s.st_ino = 0;
   newBlock->s.st_mode = 0;
   newBlock->s.st_nlink = 0;
-  newBlock->s.st_uid = getuid();
-  newBlock->s.st_gid = getegid();
+  newBlock->s.st_uid = 0;
+  newBlock->s.st_gid = 0;
   newBlock->s.st_rdev = 0;
   newBlock->s.st_size = 0;
   newBlock->s.st_blksize = 0;
@@ -116,7 +116,7 @@ void *sfs_init(struct fuse_conn_info *conn){
   log_conn(conn);
   log_fuse_context(fuse_get_context());
 
-  
+  free(newBlock);
   
   lstat("/", exampleBuf);
 
@@ -131,6 +131,30 @@ void *sfs_init(struct fuse_conn_info *conn){
  * Introduced in version 2.3
  */
 void sfs_destroy(void *userdata){
+  block* newBlock = (block*)malloc(sizeof(block));
+  //newBlock->p = NULL;
+  newBlock->type = -1;
+  newBlock->path[0] = '\0';
+  newBlock->s.st_dev = 0;
+  newBlock->s.st_ino = 0;
+  newBlock->s.st_mode = 0;
+  newBlock->s.st_nlink = 0;
+  newBlock->s.st_uid = 0;
+  newBlock->s.st_gid = 0;
+  newBlock->s.st_rdev = 0;
+  newBlock->s.st_size = 0;
+  newBlock->s.st_blksize = 0;
+  newBlock->s.st_blocks = 0;
+  newBlock->s.st_atime = 0;
+  newBlock->s.st_mtime = 0;
+  newBlock->s.st_ctime = 0;
+
+  int i;
+  for(i = 0; i <= (FileSize/BlockSize);i++)
+    block_write(i,newBlock);
+
+  free(newBlock);
+
   disk_close();
   log_msg("\nsfs_destroy(userdata=0x%08x)\n", userdata);
 }
@@ -198,6 +222,8 @@ int sfs_getattr(const char *path, struct stat *statbuf){
   statbuf->st_mtime = newBlock->s.st_mtime;
   statbuf->st_ctime = newBlock->s.st_ctime;
   
+  free(newBlock);
+
   log_msg("\nsfs_getattr(path=\"%s\", statbuf=0x%08x)\n",
   path, statbuf);
 
@@ -429,9 +455,34 @@ int sfs_opendir(const char *path, struct fuse_file_info *fi){
 int sfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset,
          struct fuse_file_info *fi){
  
-  int retstat = 0;
+  //int retstat = 0;
+  char* name = malloc(strlen(path)+1);
+  name[strlen(path)] = '\0';
+  strcpy(name, path);
+  char* ptr = strchr(name, '/');
+  while(ptr!=NULL){
+    if(ptr==&(name[strlen(name)-1]))
+      break;
+    name = &(ptr[1]);
+    ptr = strchr(name, '/');
+  }
+  if(ptr==&(name[strlen(name)-1]))
+    name[strlen(name)-1] = '\0';
+  /** Function to add an entry in a readdir() operation
+ *
+ * @param buf the buffer passed to the readdir() operation
+ * @param name the file name of the directory entry
+ * @param stat file attributes, can be NULL
+ * @param off offset of the next entry or zero
+ * @return 1 if buffer is full, zero otherwise
+ */
+/*typedef int (*fuse_fill_dir_t) (void *buf, const char *name,
+        const struct stat *stbuf, off_t off);*/
+  int ret = filler(buf, name, NULL, offset);
 
-  return retstat;
+  free(name);
+
+  return ret;
 }
 
 /** Release directory
