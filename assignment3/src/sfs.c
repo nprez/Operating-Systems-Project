@@ -243,11 +243,39 @@ int sfs_getattr(const char *path, struct stat *statbuf){
  * Introduced in version 2.5
  */
 int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
-int retstat = 0;
-    
+  int retstat = 0;
   log_msg("\nsfs_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
     path, mode, fi);
-  
+
+for(int i=0;i <= (FileSize/BlockSize);i++){
+    if(block.type==-1){
+            
+      char buf[BlockSize];
+      block_read(i, (void*) buf);
+      
+      block->type=1;
+      block->s.st_mode= mode;
+      block->s.st_uid = getuid();
+      block->s.st_gid = getegid();
+      memcpy(block.path, path, 255);
+      
+      for(int j=0;j <= (FileSize/BlockSize);j++){
+        if(block.type==-1){
+        //block.p[0]
+        
+        block_write(j, (const void*) buf);
+        block->type=2;
+        
+        
+        }else{
+            //could not find free block
+         return -1
+        }
+      }
+      
+    }
+}
+    
   return retstat;
 }
 
