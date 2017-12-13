@@ -282,10 +282,11 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   int retstat = 0;
 
   int i;
+  block* b;
   for(i=0; i<(FileSize/BlockSize); i++){
     char buf[BlockSize];
     block_read(i, (void*) buf);
-    block* b = (block*)buf;
+    b = (block*)buf;
     if(b->type==-1){
       b->type=1;
 
@@ -499,7 +500,7 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
   for(j = 0; j < size; j++){
     if(strlen(newBlock->p[i]->data) == j+offset-prevSizes){
       if(i+1 == newBlock->s.st_blocks || newBlocks->p[i+1]->type == -1)
-	return 0;
+        return 0;
       prevSizes += strlen(newBlock->p[i]->data);
       i++;
     }
