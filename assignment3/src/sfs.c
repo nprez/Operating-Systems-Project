@@ -191,8 +191,10 @@ int sfs_getattr(const char *path, struct stat *statbuf){
     if (path[i] == '/'){
 
       //if theres no path word
-      if(i-j == 1)
-        return -1;
+      if(i-j == 1){
+      	free(newBlock);
+      	return -1;
+      }
 
       //getting the path word
       char word[i-j];
@@ -225,8 +227,10 @@ int sfs_getattr(const char *path, struct stat *statbuf){
           }
         }
       }
-      if(foundIt == 0)
-        return -1;
+      if(foundIt == 0){
+      	free(newBlock);
+      	return -1;
+      }
       j = i+1;  
     }
   }
@@ -364,8 +368,10 @@ int sfs_unlink(const char *path){
           }
         }
       }
-      if(foundIt == 0)
-        return -1;
+      if(foundIt == 0){
+      	free(newBlock);
+      	return -1;
+      }
       j=i+1;
     }
     //advance to next slash
