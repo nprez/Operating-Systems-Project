@@ -207,7 +207,7 @@ int sfs_getattr(const char *path, struct stat *statbuf){
       if(firstTime == 1){
         for(a = 0; a < (FileSize/BlockSize); a++){
           block_read(i,newBlock);
-          if (newBlock->path == word){
+          if (newBlock->path == word && newBlock->type == 2){
             firstTime = 0;
             foundIt = 1;
             break;
@@ -339,7 +339,7 @@ int sfs_unlink(const char *path){
       if(firstTime == 1){
         for(k = 0; k < (FileSize/BlockSize); k++){
           block_read(i,newBlock);
-          if(newBlock->path == word){
+          if(newBlock->path == word && newBlock->type == 2){
             firstTime = 0;
             foundIt = 1;
             break;
