@@ -568,10 +568,33 @@ int sfs_mkdir(const char *path, mode_t mode){
   log_msg("\nsfs_mkdir(path=\"%s\", mode=0%3o)\n",
     path, mode);
   int retstat = 0;
-
-  block* directoryBlock = (block*)malloc(sizeof(block));
   
+  //block* directoryBlock = (block*)malloc(sizeof(block));
+  
+  for(i=0; i<(FileSize/BlockSize); i++){
+    char buf[BlockSize];
+    block_read(i, (void*) buf);
+    block* b = (block*)buf;
+    if(b->type==-1){
+      b->type=0;
 
+      b->s.st_dev = exampleBuf->st_dev;
+      b->s.st_ino = exampleBuf->st_ino;
+      b->s.st_mode= mode;
+      b->s.st_nlink = 1;
+      b->s.st_uid = exampleBuf->st_uid;
+      b->s.st_gid = exampleBuf->st_gid;
+      b->s.st_rdev = exampleBuf->st_rdev;
+      b->s.st_size = 0;
+      time_t t = time(NULL);
+      b->s.st_atime = t;
+      b->s.st_mtime = t;
+      b->s.st_ctime = t;
+      b->s.st_blksize = 512;
+      b->s.st_blocks = 0;
+    }
+    
+    
   return retstat;
 }
 
@@ -582,8 +605,14 @@ int sfs_rmdir(const char *path){
     path);
   int retstat = 0;
 
+  block* newBlock = getBlock(path);
+  
+  //Still needs to find children and check to see if they DNE
+  
+  newBlock->type=-1;
   return retstat;
 }
+
 
 
 /** Open directory
