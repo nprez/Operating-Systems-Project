@@ -478,7 +478,7 @@ int sfs_release(const char *path, struct fuse_file_info *fi){
 int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi){
   log_msg("\nsfs_read(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
-  int retstat = 0;
+  int retstat = size;
 
   block* newBlock = (block*)malloc(sizeof(block));
 
@@ -536,7 +536,7 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
        struct fuse_file_info *fi){
   log_msg("\nsfs_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
-  int retstat = 0;
+  int retstat = size;
 
   return retstat;
 }
