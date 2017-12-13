@@ -33,7 +33,7 @@
 #include "log.h"
 
 #define BlockSize 512
-#define BlockArraySize (512-(sizeof(int)+255+sizeof(stat)))/sizeof(struct block_*)
+#define BlockArraySize (512-(sizeof(int)+255+sizeof(struct stat)))/sizeof(struct block_*)
 #define FileSize 16777216  //16MB
 
 struct sfs_state* sfs_data;
