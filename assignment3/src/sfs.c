@@ -68,7 +68,7 @@ typedef struct block_{
 typedef struct data_block_{
   int type; //-1 = error; 2 = data
   int size; //amonut of data used
-  char data[512-sizeof(int)];
+  char data[512-(2*sizeof(int))];
 } data_block;
 
 
