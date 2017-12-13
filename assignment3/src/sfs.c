@@ -132,6 +132,7 @@ void *sfs_init(struct fuse_conn_info *conn){
  * Introduced in version 2.3
  */
 void sfs_destroy(void *userdata){
+  log_msg("\nsfs_destroy(userdata=0x%08x)\n", userdata);
   block* newBlock = (block*)malloc(sizeof(block));
   //newBlock->p = NULL;
   newBlock->type = -1;
@@ -157,7 +158,6 @@ void sfs_destroy(void *userdata){
   free(newBlock);
 
   disk_close();
-  log_msg("\nsfs_destroy(userdata=0x%08x)\n", userdata);
 }
 
 /** Get file attributes.
@@ -167,6 +167,8 @@ void sfs_destroy(void *userdata){
  * mount option is given.
  */
 int sfs_getattr(const char *path, struct stat *statbuf){
+  log_msg("\nsfs_getattr(path=\"%s\", statbuf=0x%08x)\n",
+  path, statbuf);
   int retstat = 0;
   //char fpath[PATH_MAX];
   block* newBlock = (block*)malloc(sizeof(block));
@@ -225,9 +227,6 @@ int sfs_getattr(const char *path, struct stat *statbuf){
   
   free(newBlock);
 
-  log_msg("\nsfs_getattr(path=\"%s\", statbuf=0x%08x)\n",
-  path, statbuf);
-
   return retstat;
 }
 
@@ -244,9 +243,9 @@ int sfs_getattr(const char *path, struct stat *statbuf){
  * Introduced in version 2.5
  */
 int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
-  int retstat = 0;
   log_msg("\nsfs_create(path=\"%s\", mode=0%03o, fi=0x%08x)\n",
     path, mode, fi);
+  int retstat = 0;
 
   int i;
   for(i=0; i<(FileSize/BlockSize); i++){
@@ -300,6 +299,7 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
 
 /** Remove a file */
 int sfs_unlink(const char *path){
+  log_msg("sfs_unlink(path=\"%s\")\n", path);
   int retstat = 0;
   int i;
   int j =0;
@@ -361,8 +361,6 @@ int sfs_unlink(const char *path){
       j=i+1;
     }
   }
-  
-  log_msg("sfs_unlink(path=\"%s\")\n", path);
 
   return retstat;
 }
@@ -378,9 +376,9 @@ int sfs_unlink(const char *path){
  * Changed in version 2.2
  */
 int sfs_open(const char *path, struct fuse_file_info *fi){
-  int retstat = 0;
   log_msg("\nsfs_open(path\"%s\", fi=0x%08x)\n",
     path, fi);
+  int retstat = 0;
 
   return retstat;
 }
@@ -400,9 +398,9 @@ int sfs_open(const char *path, struct fuse_file_info *fi){
  * Changed in version 2.2
  */
 int sfs_release(const char *path, struct fuse_file_info *fi){
-  int retstat = 0;
   log_msg("\nsfs_release(path=\"%s\", fi=0x%08x)\n",
     path, fi);
+  int retstat = 0;
 
   return retstat;
 }
@@ -419,9 +417,9 @@ int sfs_release(const char *path, struct fuse_file_info *fi){
  * Changed in version 2.2
  */
 int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi){
-  int retstat = 0;
   log_msg("\nsfs_read(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
+  int retstat = 0;
 
   return retstat;
 }
@@ -436,9 +434,9 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
  */
 int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
        struct fuse_file_info *fi){
-  int retstat = 0;
   log_msg("\nsfs_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
+  int retstat = 0;
 
   return retstat;
 }
@@ -446,9 +444,9 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
 
 /** Create a directory */
 int sfs_mkdir(const char *path, mode_t mode){
-  int retstat = 0;
   log_msg("\nsfs_mkdir(path=\"%s\", mode=0%3o)\n",
     path, mode);
+  int retstat = 0;
 
   return retstat;
 }
@@ -456,9 +454,9 @@ int sfs_mkdir(const char *path, mode_t mode){
 
 /** Remove a directory */
 int sfs_rmdir(const char *path){
-  int retstat = 0;
   log_msg("sfs_rmdir(path=\"%s\")\n",
     path);
+  int retstat = 0;
 
   return retstat;
 }
@@ -472,9 +470,9 @@ int sfs_rmdir(const char *path){
  * Introduced in version 2.3
  */
 int sfs_opendir(const char *path, struct fuse_file_info *fi){
-  int retstat = 0;
   log_msg("\nsfs_opendir(path=\"%s\", fi=0x%08x)\n",
     path, fi);
+  int retstat = 0;
 
   return retstat;
 }
