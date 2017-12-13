@@ -219,7 +219,7 @@ int sfs_getattr(const char *path, struct stat *statbuf){
         for(a = 0; a < BlockArraySize; a++){
           if(((block*) (newBlock->p[a]))->path == word){
             //found the block we wanted
-	    newBlock = (block*)(newBlock->p[a]);
+	    	newBlock = (block*)(newBlock->p[a]);
             foundIt = 1;
             break;
           }
@@ -516,9 +516,6 @@ int sfs_rmdir(const char *path){
   log_msg("sfs_rmdir(path=\"%s\")\n",
     path);
   int retstat = 0;
-
-  
-
 
   return retstat;
 }
