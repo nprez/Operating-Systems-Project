@@ -81,6 +81,64 @@ struct stat* exampleBuf;
 // come indirectly from /usr/include/fuse.h
 //
 
+
+block* getPathBlock(char* path){
+  block* newBlock = (block*)malloc(sizeof(block));
+  int i;
+  int j = 0;
+  int firstTime = 1;
+
+  //check if path starts with forward slash
+  if(path[j] == '/')
+    j = 1;
+
+  //find next character that is a forward slash
+  for(i = 0; i < strlen(path); i++){
+    if(path[i] == '/' || i == strlen(path) - 1){
+
+      //error case for if no path word
+      if (i - j == 1)
+        return NULL;
+
+      //getting the path word
+      char word[i-j];
+      int k;
+      for(k = j; k < i; k++)
+        word[k-j] = path[k];
+      int foundIt = 0;
+      int a;
+
+      //finding block using block_read
+      if(firstTime == 1){
+        for(a = 0; a < (FileSize/BlockSize); a++){
+          block_read(i,newBlock);
+          if(newBlock->path == word){
+            firstTime = 0;
+            foundIt = 1;
+            break;
+          }
+        }
+      }
+      //traversing through trie
+      else{
+        for(a = 0; a < newBlock->s.st_blocks; a++){
+          if(((block*) (newBlock->p[a]))->path == word){
+            //found block
+            newBlock = (block*)(newBlock->p[a]);
+            foundIt = 1;
+	    break;
+          }
+        }
+      }
+      if(foundIt == 0)
+        return NULL;
+      j = i+1;
+    }
+  }
+  return newBlock;
+}
+
+
 /**
  * Initialize filesystem
  *
