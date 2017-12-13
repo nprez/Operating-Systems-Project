@@ -260,13 +260,13 @@ int sfs_unlink(const char *path){
   if (path[j] == '/')
     j++;
   for(i = 1; i < strlen(path); i++){
-    if(i == '/' || i == (strlen(path)-1)){
+    if(path[i] == '/' || i == (strlen(path)-1)){
       if(i-j == 1)
 	return -1;
       char word[i-j];
       int k;
       for (k = j; k < i; k++)
-	word[k-j] = word[k];
+	word[k-j] = path[k];
       int foundIt = 0;
       block* newBlock = (block*)malloc(sizeof(block));
       if(firstTime == 1){
@@ -375,6 +375,47 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
   log_msg("\nsfs_read(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
 
+  block* newBlock = (block*)malloc(sizeof(block));
+
+  int i;
+  int j = 0;
+  int firstTime = 1;
+  block* ptr;
+
+  if (path[j] == '/')
+    j = 1;
+  for(i = 1; i < strlen(path); i++){
+    if(path[i] == '/'){
+      char word[i-j];
+      int k;
+      for(k = j; k < i; k++)
+	word[k-j] = path[k];
+      int foundIt = 0;
+      if(firstTime == 1){
+	for(k = 0; k < (fileSize/BlockSize); k++){
+	  block_read(i,newBlock);
+	  foundIt = 1;
+	  break;
+	}
+      }
+    }
+    else if(i != (strlen(path)-1)){
+      for(k=0; k< newBlock->s.st_blocks; k++){
+	int found = 0;
+	if(newBlock->p[k]->path == word){
+	  found = 1;
+	  ptr = newBlock->p[k];
+	  int a;
+	  for(a = 0; a < ptr->s.st_blocks; a++)
+	    ptr->p[a]->type = -1;
+	}
+	if(found == 1){
+	  
+	}
+      }
+    }
+  }
+
   return retstat;
 }
 
@@ -388,6 +429,7 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
  */
 int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
        struct fuse_file_info *fi){
+  
   int retstat = 0;
   log_msg("\nsfs_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
@@ -402,6 +444,9 @@ int sfs_mkdir(const char *path, mode_t mode){
   log_msg("\nsfs_mkdir(path=\"%s\", mode=0%3o)\n",
     path, mode);
 
+  block* directoryBlock = (block*)malloc(sizeof(block));
+  
+
   return retstat;
 }
 
@@ -411,6 +456,9 @@ int sfs_rmdir(const char *path){
   int retstat = 0;
   log_msg("sfs_rmdir(path=\"%s\")\n",
     path);
+
+  
+
 
   return retstat;
 }
@@ -540,7 +588,7 @@ int main(int argc, char *argv[]){
   argc--;
 
   sfs_data->logfile = log_open();
-
+  
   // turn over control to fuse
   fprintf(stderr, "about to call fuse_main, %s \n", sfs_data->diskfile);
   fuse_stat = fuse_main(argc, argv, &sfs_oper, sfs_data);
