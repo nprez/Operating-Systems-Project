@@ -34,6 +34,7 @@
 
 #define BlockSize 512
 #define BlockArraySize (512-(sizeof(int)+255+sizeof(struct stat)))/sizeof(struct block_*)
+#define DataPerBlock (512-(2*sizeof(int)))
 #define FileSize 16777216  //16MB
 
 struct sfs_state* sfs_data;
@@ -326,6 +327,8 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   if(i==(FileSize/BlockSize)){
     return -1;
   }
+
+  block_write(i, b);
     
   return retstat;
 }
@@ -537,6 +540,41 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
   log_msg("\nsfs_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
   int retstat = size;
+
+  block* b = getBlock(path);
+  if(b==NULL || b->type!=1)
+    return -1;
+
+  data_block* d = (data_block*)(b->p[b->s.st_blocks-1]);
+  if(DataPerBlock-d->size>=size){
+    int i;
+    for(i=0; i<size; i++){
+      d->data[d->size+i] = buf[i];
+    }
+    d->size+=size;
+  }
+  else{
+    int numNewBlocks = (size-(DataPerBlock-d->size))/(DataPerBlock);
+    int count = 0;
+    int newDataBlockNums[numNewBlocks];
+    int i;
+    for(i=0; i<(FileSize/BlockSize); i++){
+      data_block* temp = malloc(sizeof(data_block));
+      block_read(i, temp);
+      if(temp->type == -1){
+        newDataBlockNums[count] = i;
+        count++;
+      }
+      free(temp);
+      if(count==numNewBlocks)
+        break;
+    }
+
+    if(count<numNewBlocks)
+      return -1;
+
+    //actual work
+  }
 
   return retstat;
 }
