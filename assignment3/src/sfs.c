@@ -453,6 +453,10 @@ int sfs_open(const char *path, struct fuse_file_info *fi){
     path, fi);
   int retstat = 0;
 
+
+if(!getBlock(path)){
+return -1;
+}
   int flags = fcntl(fi->fh, F_GETFL);
   
   if(flags == -1){
@@ -461,7 +465,6 @@ int sfs_open(const char *path, struct fuse_file_info *fi){
   
   return retstat;
 }
-
 /** Release an open file
  *
  * Release is called when there are no more references to an open
