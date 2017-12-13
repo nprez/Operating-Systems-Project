@@ -39,9 +39,9 @@
 struct sfs_state* sfs_data;
 
 typedef struct block_{
-  int type; // -1 = error, 0 = directory, 1 = file, 2 = block
+  int type; // -1 = error, 0 = directory, 1 = file
   struct stat s;
-  struct block_* p[BlockArraySize];
+  void* p[BlockArraySize];
   char path[255];
 
   /*
@@ -64,6 +64,12 @@ typedef struct block_{
   blkcnt_t  st_blocks  Number of blocks allocated for this object.
   */
 } block;
+
+typedef struct data_block_{
+  int type; //-1 = error; 2 = data
+  int size; //amonut of data used
+  char data[512-sizeof(int)];
+} data_block;
 
 
 struct stat* exampleBuf;
@@ -200,8 +206,8 @@ int sfs_getattr(const char *path, struct stat *statbuf){
       }
       else{
         for(a = 0; a < BlockArraySize; a++){
-          if(newBlock->p[a]->path == word){
-            newBlock = newBlock->p[a];
+          if(((block*) (newBlock->p[a]))->path == word){
+            newBlock = (block*)(newBlock->p[a]);
             foundIt = 1;
             break;
           }
@@ -304,7 +310,7 @@ int sfs_unlink(const char *path){
   int i;
   int j =0;
   int firstTime = 1;
-  block* ptr;
+  data_block* ptr;
   if (path[j] == '/')
     j++;
   for(i = 1; i < strlen(path); i++){
@@ -329,30 +335,20 @@ int sfs_unlink(const char *path){
       }
       else if(i != (strlen(path)-1)){
         for(k = 0; k < newBlock->s.st_blocks; k++){
-          if(newBlock->p[k]->path == word){
-            newBlock = newBlock->p[k];
+          if(((block*) (newBlock->p[k]))->path == word){
+            newBlock = (block*)(newBlock->p[k]);
             foundIt = 1;
             break;
           }
         }
       }
       else if(i == (strlen(path)-1)){
-        for(k = 0; k < newBlock->s.st_blocks; k++){
-          int found = 0;
-          if(newBlock->p[k]->path == word){
-            found = 1;
-            ptr = newBlock->p[k];
-            int a;
-            for(a = 0; a < ptr->s.st_blocks; a++)
-              ptr->p[a]->type = -1;
-          }
-          if(found == 1){
-            if(k != newBlock->s.st_blocks)
-              newBlock->p[k] = newBlock->p[k+1];
-            else{
-              newBlock->p[k] = NULL;
-              newBlock->s.st_blocks--;
-            }
+        int found = 0;
+        if(newBlock->p[k]->path == word){
+          found = 1;
+          for(k=0; k<newBlock->st_blocks; k++){
+            ptr = (data_block*)(newBlock->p[k]);
+            ptr->type = -1;
           }
         }
       }
