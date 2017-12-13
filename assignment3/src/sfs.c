@@ -308,16 +308,16 @@ int sfs_unlink(const char *path){
   log_msg("sfs_unlink(path=\"%s\")\n", path);
   int retstat = 0;
   int i;
-  int j =0;
+  int j = 0;
   int firstTime = 1;
   data_block* ptr;
   if (path[j] == '/')
     j++;
   for(i = 1; i < strlen(path); i++){
-    if(path[i] == '/' || i == (strlen(path)-1)){
-      if(i-j == 1)
+    if(path[i] == '/' || i == (strlen(path)-1)){  //at a slash or the end
+      if(i-j == 1)  //two slashes in a row
         return -1;
-      char word[i-j];
+      char word[i-j]; //a directory or file
       int k;
       for (k = j; k < i; k++)
         word[k-j] = path[k];
@@ -343,10 +343,9 @@ int sfs_unlink(const char *path){
         }
       }
       else if(i == (strlen(path)-1)){
-        int found = 0;
-        if(newBlock->p[k]->path == word){
-          found = 1;
-          for(k=0; k<newBlock->st_blocks; k++){
+        if(newBlock->path == word){
+          foundIt = 1;
+          for(k=0; k<newBlock->s.st_blocks; k++){
             ptr = (data_block*)(newBlock->p[k]);
             ptr->type = -1;
           }
@@ -356,6 +355,7 @@ int sfs_unlink(const char *path){
         return -1;
       j=i+1;
     }
+    //advance to next slash
   }
 
   return retstat;
