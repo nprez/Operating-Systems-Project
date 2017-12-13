@@ -82,7 +82,7 @@ struct stat* exampleBuf;
 //
 
 
-block* getPathBlock(char* path){
+block* getBlock(const char* path){
   block* newBlock = (block*)malloc(sizeof(block));
   int i;
   int j = 0;
@@ -98,7 +98,7 @@ block* getPathBlock(char* path){
 
       //error case for if no path word
       if (i - j == 1)
-        return NULL;
+      	return NULL;
 
       //getting the path word
       char word[i-j];
@@ -110,9 +110,12 @@ block* getPathBlock(char* path){
 
       //finding block using block_read
       if(firstTime == 1){
+      	int t = 0;
+      	if(i == strlen(path)-1)
+      		t = 1;
         for(a = 0; a < (FileSize/BlockSize); a++){
           block_read(i,newBlock);
-          if(newBlock->path == word){
+          if(newBlock->path == word && newBlock->type == t){
             firstTime = 0;
             foundIt = 1;
             break;
@@ -126,15 +129,16 @@ block* getPathBlock(char* path){
             //found block
             newBlock = (block*)(newBlock->p[a]);
             foundIt = 1;
-	    break;
+	    	break;
           }
         }
       }
       if(foundIt == 0)
-        return NULL;
+      	return NULL;
       j = i+1;
     }
   }
+
   return newBlock;
 }
 
@@ -235,63 +239,11 @@ int sfs_getattr(const char *path, struct stat *statbuf){
   path, statbuf);
   int retstat = 0;
   //char fpath[PATH_MAX];
-  block* newBlock = (block*)malloc(sizeof(block));
+  //block* newBlock = (block*)malloc(sizeof(block));
 
-  int i;
-  int j = 0;
-  int firstTime = 1;
-
-  //check if path starts with forward slash
-  if(path[j] == '/')
-    j = 1;
-  //find next character that is a forward slash
-  for(i = 1; i < strlen(path); i++){
-    if (path[i] == '/'){
-
-      //if theres no path word
-      if(i-j == 1){
-      	free(newBlock);
-      	return -1;
-      }
-
-      //getting the path word
-      char word[i-j];
-      int k;
-      for(k = j; k < i; k++)
-        word[k-j] = path[k];
-
-      int foundIt = 0;
-      int a;
-
-      //finding the block using block_read. does it only in beginning once
-      if(firstTime == 1){
-        for(a = 0; a < (FileSize/BlockSize); a++){
-          block_read(i,newBlock);
-          if (newBlock->path == word && newBlock->type == 2){
-            firstTime = 0;
-            foundIt = 1;
-            break;
-          }
-        }
-      }
-      //going through trie
-      else{
-        for(a = 0; a < BlockArraySize; a++){
-          if(((block*) (newBlock->p[a]))->path == word){
-            //found the block we wanted
-	    	newBlock = (block*)(newBlock->p[a]);
-            foundIt = 1;
-            break;
-          }
-        }
-      }
-      if(foundIt == 0){
-      	free(newBlock);
-      	return -1;
-      }
-      j = i+1;  
-    }
-  }
+  block* newBlock = getBlock(path);
+  if(newBlock == NULL)
+  	return -1;
 
   //putting stat data into stat buffer
   statbuf->st_ino = newBlock->s.st_ino;
@@ -400,8 +352,11 @@ int sfs_unlink(const char *path){
       block* newBlock = (block*)malloc(sizeof(block));
       if(firstTime == 1){
         for(k = 0; k < (FileSize/BlockSize); k++){
-          block_read(i,newBlock);
-          if(newBlock->path == word && newBlock->type == 2){
+        	int t = 0;
+        	if(i == strlen(path)-1)
+        		t=1;
+        	block_read(i,newBlock);
+          if(newBlock->path == word && newBlock->type == t){
             firstTime = 0;
             foundIt = 1;
             break;
