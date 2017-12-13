@@ -314,7 +314,7 @@ int sfs_unlink(const char *path){
       char word[i-j];
       int k;
       for (k = j; k < i; k++)
-	word[k-j] = path[k];
+        word[k-j] = path[k];
       int foundIt = 0;
       block* newBlock = (block*)malloc(sizeof(block));
       if(firstTime == 1){
@@ -425,39 +425,39 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
 
   int i;
   int j = 0;
+  int k;
   int firstTime = 1;
   block* ptr;
 
   if (path[j] == '/')
     j = 1;
   for(i = 1; i < strlen(path); i++){
+    char word[i-j];
     if(path[i] == '/'){
-      char word[i-j];
-      int k;
       for(k = j; k < i; k++)
-	word[k-j] = path[k];
+        word[k-j] = path[k];
       int foundIt = 0;
       if(firstTime == 1){
-	for(k = 0; k < (fileSize/BlockSize); k++){
-	  block_read(i,newBlock);
-	  foundIt = 1;
-	  break;
-	}
+        for(k = 0; k < (FileSize/BlockSize); k++){
+          block_read(i,newBlock);
+          foundIt = 1;
+          break;
+        }
       }
     }
     else if(i != (strlen(path)-1)){
       for(k=0; k< newBlock->s.st_blocks; k++){
-	int found = 0;
-	if(newBlock->p[k]->path == word){
-	  found = 1;
-	  ptr = newBlock->p[k];
-	  int a;
-	  for(a = 0; a < ptr->s.st_blocks; a++)
-	    ptr->p[a]->type = -1;
-	}
-	if(found == 1){
-	  
-	}
+        int found = 0;
+        if(newBlock->p[k]->path == word){
+          found = 1;
+          ptr = newBlock->p[k];
+          int a;
+          for(a = 0; a < ptr->s.st_blocks; a++)
+            ptr->p[a]->type = -1;
+        }
+        if(found == 1){
+
+        }
       }
     }
   }
@@ -475,11 +475,6 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
  */
 int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
        struct fuse_file_info *fi){
-<<<<<<< HEAD
-  
-  int retstat = 0;
-=======
->>>>>>> 0b3c07b2f802828b9de7a3ca151a59e9a7194ebd
   log_msg("\nsfs_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
   int retstat = 0;
