@@ -182,18 +182,28 @@ int sfs_getattr(const char *path, struct stat *statbuf){
   int i;
   int j = 0;
   int firstTime = 1;
+
+  //check if path starts with forward slash
   if(path[j] == '/')
     j = 1;
+  //find next character that is a forward slash
   for(i = 1; i < strlen(path); i++){
     if (path[i] == '/'){
+
+      //if theres no path word
       if(i-j == 1)
         return -1;
+
+      //getting the path word
       char word[i-j];
       int k;
       for(k = j; k < i; k++)
         word[k-j] = path[k];
+
       int foundIt = 0;
       int a;
+
+      //finding the block using block_read. does it only in beginning once
       if(firstTime == 1){
         for(a = 0; a < (FileSize/BlockSize); a++){
           block_read(i,newBlock);
@@ -204,10 +214,12 @@ int sfs_getattr(const char *path, struct stat *statbuf){
           }
         }
       }
+      //going through trie
       else{
         for(a = 0; a < BlockArraySize; a++){
           if(((block*) (newBlock->p[a]))->path == word){
-            newBlock = (block*)(newBlock->p[a]);
+            //found the block we wanted
+	    newBlock = (block*)(newBlock->p[a]);
             foundIt = 1;
             break;
           }
@@ -219,6 +231,7 @@ int sfs_getattr(const char *path, struct stat *statbuf){
     }
   }
 
+  //putting stat data into stat buffer
   statbuf->st_ino = newBlock->s.st_ino;
   statbuf->st_mode = newBlock->s.st_mode;
   statbuf->st_nlink = newBlock->s.st_nlink;
