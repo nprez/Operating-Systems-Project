@@ -98,7 +98,7 @@ block* getBlock(const char* path){
 
       //error case for if no path word
       if (i - j == 1)
-      	return NULL;
+        return NULL;
 
       //getting the path word
       char word[i-j];
@@ -110,9 +110,9 @@ block* getBlock(const char* path){
 
       //finding block using block_read
       if(firstTime == 1){
-      	int t = 0;
-      	if(i == strlen(path)-1)
-      		t = 1;
+        int t = 0;
+        if(i == strlen(path)-1)
+          t = 1;
         for(a = 0; a < (FileSize/BlockSize); a++){
           block_read(i,newBlock);
           if(newBlock->path == word && newBlock->type == t){
@@ -129,12 +129,12 @@ block* getBlock(const char* path){
             //found block
             newBlock = (block*)(newBlock->p[a]);
             foundIt = 1;
-	    	break;
+        break;
           }
         }
       }
       if(foundIt == 0)
-      	return NULL;
+        return NULL;
       j = i+1;
     }
   }
@@ -243,7 +243,7 @@ int sfs_getattr(const char *path, struct stat *statbuf){
 
   block* newBlock = getBlock(path);
   if(newBlock == NULL)
-  	return -1;
+    return -1;
 
   //putting stat data into stat buffer
   statbuf->st_ino = newBlock->s.st_ino;
@@ -338,6 +338,7 @@ int sfs_unlink(const char *path){
   int j = 0;
   int firstTime = 1;
   data_block* ptr;
+  block* oldBlock = NULL;
   if (path[j] == '/')
     j++;
   for(i = 1; i < strlen(path); i++){
@@ -352,13 +353,20 @@ int sfs_unlink(const char *path){
       block* newBlock = (block*)malloc(sizeof(block));
       if(firstTime == 1){
         for(k = 0; k < (FileSize/BlockSize); k++){
-        	int t = 0;
-        	if(i == strlen(path)-1)
-        		t=1;
-        	block_read(i,newBlock);
+          int t = 0;
+          if(i == strlen(path)-1)
+            t=1;
+          block_read(i,newBlock);
           if(newBlock->path == word && newBlock->type == t){
             firstTime = 0;
             foundIt = 1;
+            if(t==1){
+              newBlock->type = -1;
+              for(k=0; k<newBlock->s.st_blocks; k++){
+                ptr = (data_block*)(newBlock->p[k]);
+                ptr->type = -1;
+              }
+            }
             break;
           }
         }
@@ -366,6 +374,7 @@ int sfs_unlink(const char *path){
       else if(i != (strlen(path)-1)){
         for(k = 0; k < newBlock->s.st_blocks; k++){
           if(((block*) (newBlock->p[k]))->path == word){
+            oldBlock = newBlock;
             newBlock = (block*)(newBlock->p[k]);
             foundIt = 1;
             break;
@@ -375,6 +384,19 @@ int sfs_unlink(const char *path){
       else if(i == (strlen(path)-1)){
         if(newBlock->path == word){
           foundIt = 1;
+          newBlock->type = -1;
+          if(oldBlock!=NULL){
+            int g;
+            for(g=0; g<oldBlock->s.st_blocks; g++){
+              if(((block*)(oldBlock->p[g]))==newBlock)
+                break;
+            }
+            for(g=g; g<oldBlock->s.st_blocks-1; g++){
+              oldBlock->p[g] = oldBlock->p[g+1];
+            }
+            oldBlock->p[g] = NULL;
+            oldBlock->s.st_blocks--;
+          }
           for(k=0; k<newBlock->s.st_blocks; k++){
             ptr = (data_block*)(newBlock->p[k]);
             ptr->type = -1;
@@ -382,10 +404,11 @@ int sfs_unlink(const char *path){
         }
       }
       if(foundIt == 0){
-      	free(newBlock);
-      	return -1;
+        free(newBlock);
+        return -1;
       }
       j=i+1;
+      free(newBlock);
     }
     //advance to next slash
   }
