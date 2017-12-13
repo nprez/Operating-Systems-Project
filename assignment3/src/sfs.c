@@ -431,7 +431,7 @@ int sfs_open(const char *path, struct fuse_file_info *fi){
     path, fi);
   int retstat = 0;
 
-  if(!getBlock(path)){
+  if(getBlock(path) == NULL){
     return -1;
   }
   int flags = fcntl(fi->fh, F_GETFL);
