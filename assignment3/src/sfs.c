@@ -249,8 +249,10 @@ int sfs_getattr(const char *path, struct stat *statbuf){
     if (path[i] == '/'){
 
       //if theres no path word
-      if(i-j == 1)
-        return -1;
+      if(i-j == 1){
+      	free(newBlock);
+      	return -1;
+      }
 
       //getting the path word
       char word[i-j];
@@ -265,7 +267,7 @@ int sfs_getattr(const char *path, struct stat *statbuf){
       if(firstTime == 1){
         for(a = 0; a < (FileSize/BlockSize); a++){
           block_read(i,newBlock);
-          if (newBlock->path == word){
+          if (newBlock->path == word && newBlock->type == 2){
             firstTime = 0;
             foundIt = 1;
             break;
@@ -283,8 +285,10 @@ int sfs_getattr(const char *path, struct stat *statbuf){
           }
         }
       }
-      if(foundIt == 0)
-        return -1;
+      if(foundIt == 0){
+      	free(newBlock);
+      	return -1;
+      }
       j = i+1;  
     }
   }
@@ -397,7 +401,7 @@ int sfs_unlink(const char *path){
       if(firstTime == 1){
         for(k = 0; k < (FileSize/BlockSize); k++){
           block_read(i,newBlock);
-          if(newBlock->path == word){
+          if(newBlock->path == word && newBlock->type == 2){
             firstTime = 0;
             foundIt = 1;
             break;
@@ -422,8 +426,10 @@ int sfs_unlink(const char *path){
           }
         }
       }
-      if(foundIt == 0)
-        return -1;
+      if(foundIt == 0){
+      	free(newBlock);
+      	return -1;
+      }
       j=i+1;
     }
     //advance to next slash
