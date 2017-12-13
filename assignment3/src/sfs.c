@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 //#include <fuse_common.h>
 
 #ifdef HAVE_SYS_XATTR_H
@@ -110,7 +111,7 @@ void *sfs_init(struct fuse_conn_info *conn){
   newBlock->s.st_ctime = 0;
 
   int i;
-  for(i = 0; i <= (FileSize/BlockSize);i++)
+  for(i = 0; i<(FileSize/BlockSize); i++)
     block_write(i,newBlock);
 
   log_conn(conn);
@@ -150,7 +151,7 @@ void sfs_destroy(void *userdata){
   newBlock->s.st_ctime = 0;
 
   int i;
-  for(i = 0; i <= (FileSize/BlockSize);i++)
+  for(i=0; i<(FileSize/BlockSize); i++)
     block_write(i,newBlock);
 
   free(newBlock);
@@ -248,33 +249,50 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     path, mode, fi);
 
   int i;
-  for(i=0;i <= (FileSize/BlockSize);i++){
+  for(i=0; i<(FileSize/BlockSize); i++){
     char buf[BlockSize];
     block_read(i, (void*) buf);
     block* b = (block*)buf;
     if(b->type==-1){
       b->type=1;
+
+      b->s.st_dev = exampleBuf->st_dev;
+      b->s.st_ino = exampleBuf->st_ino;
       b->s.st_mode= mode;
-      b->s.st_uid = getuid();
-      b->s.st_gid = getegid();
-      memcpy(b->path, path, 255);
-      
-      int j;
-      for(j=0;j <= (FileSize/BlockSize);j++){
-        if(b->type==-1){
-        //block.p[0]
-        
-        block_write(j, (const void*) buf);
-        b->type=2;
-        
-        
-        }else{
-            //could not find free block
-         return -1;
-        }
+      b->s.st_nlink = 1;
+      b->s.st_uid = exampleBuf->st_uid;
+      b->s.st_gid = exampleBuf->st_gid;
+      b->s.st_rdev = exampleBuf->st_rdev;
+      b->s.st_size = 0;
+      time_t t = time(NULL);
+      b->s.st_atime = t;
+      b->s.st_mtime = t;
+      b->s.st_ctime = t;
+      b->s.st_blksize = 512;
+      b->s.st_blocks = 0;
+
+      char* name = malloc(strlen(path)+1);
+      name[strlen(path)] = '\0';
+      strcpy(name, path);
+      char* ptr = strchr(name, '/');
+      while(ptr!=NULL){
+        if(ptr==&(name[strlen(name)-1]))
+          break;
+        name = &(ptr[1]);
+        ptr = strchr(name, '/');
       }
-      
+      if(ptr==&(name[strlen(name)-1]))
+        name[strlen(name)-1] = '\0';
+
+      strcpy(b->path, name);
+
+      free(name);
+
+      break;
     }
+  }
+  if(i==(FileSize/BlockSize)){
+    return -1;
   }
     
   return retstat;
@@ -292,54 +310,54 @@ int sfs_unlink(const char *path){
   for(i = 1; i < strlen(path); i++){
     if(i == '/' || i == (strlen(path)-1)){
       if(i-j == 1)
-	return -1;
+        return -1;
       char word[i-j];
       int k;
       for (k = j; k < i; k++)
-	word[k-j] = word[k];
+        word[k-j] = word[k];
       int foundIt = 0;
       block* newBlock = (block*)malloc(sizeof(block));
       if(firstTime == 1){
-	for(k = 0; k < (FileSize/BlockSize); k++){
-	  block_read(i,newBlock);
-	  if(newBlock->path == word){
-	    firstTime = 0;
-	    foundIt = 1;
-	    break;
-	  }
-	}
+        for(k = 0; k < (FileSize/BlockSize); k++){
+          block_read(i,newBlock);
+          if(newBlock->path == word){
+            firstTime = 0;
+            foundIt = 1;
+            break;
+          }
+        }
       }
       else if(i != (strlen(path)-1)){
-	for(k = 0; k < newBlock->s.st_blocks; k++){
-	  if(newBlock->p[k]->path == word){
-	    newBlock = newBlock->p[k];
-	    foundIt = 1;
-	    break;
-	  }
-	}
+        for(k = 0; k < newBlock->s.st_blocks; k++){
+          if(newBlock->p[k]->path == word){
+            newBlock = newBlock->p[k];
+            foundIt = 1;
+            break;
+          }
+        }
       }
       else if(i == (strlen(path)-1)){
-	for(k = 0; k < newBlock->s.st_blocks; k++){
-	  int found = 0;
-	  if(newBlock->p[k]->path == word){
-	    found = 1;
-	    ptr = newBlock->p[k];
-	    int a;
-	    for(a = 0; a < ptr->s.st_blocks; a++)
-	      ptr->p[a]->type = -1;
-	  }
-	  if(found == 1){
-	    if(k != newBlock->s.st_blocks)
-	      newBlock->p[k] = newBlock->p[k+1];
-	    else{
-	      newBlock->p[k] = NULL;
-	      newBlock->s.st_blocks--;
-	    }
-	  }
-	}
+        for(k = 0; k < newBlock->s.st_blocks; k++){
+          int found = 0;
+          if(newBlock->p[k]->path == word){
+            found = 1;
+            ptr = newBlock->p[k];
+            int a;
+            for(a = 0; a < ptr->s.st_blocks; a++)
+              ptr->p[a]->type = -1;
+          }
+          if(found == 1){
+            if(k != newBlock->s.st_blocks)
+              newBlock->p[k] = newBlock->p[k+1];
+            else{
+              newBlock->p[k] = NULL;
+              newBlock->s.st_blocks--;
+            }
+          }
+        }
       }
       if(foundIt == 0)
-	return -1;
+        return -1;
       j=i+1;
     }
   }
