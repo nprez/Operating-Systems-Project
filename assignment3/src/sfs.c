@@ -330,6 +330,11 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     block* parentBlock = malloc(sizeof(block));
     block_read(parentNum, parentBlock);
     //add to children
+    if(parentBlock->s.st_blocks == BlockArraySize){ //parent directory is full
+      free(newBlock);
+      free(parentBlock);
+      return -1;
+    }
     parentBlock->s.st_blocks++;
     parentBlock->p[parentBlock->s.st_blocks-1] = j;
     block_write(parentNum, parentBlock);
@@ -742,6 +747,10 @@ int sfs_mkdir(const char *path, mode_t mode){
     block* parentBlock = malloc(sizeof(block));
     block_read(parentNum, parentBlock);
     //set parent children
+    if(parentBlock->s.st_blocks == BlockArraySize){ //parent is full
+      free(parentBlock);
+      return -1;
+    }
     parentBlock->s.st_blocks++;
     parentBlock->p[parentBlock->s.st_blocks-1] = i;
 
