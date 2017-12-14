@@ -685,6 +685,8 @@ int sfs_rmdir(const char *path){
  *
  * Introduced in version 2.3
  */
+
+//just do this and not mkdir and rmdir
 int sfs_opendir(const char *path, struct fuse_file_info *fi){
   log_msg("\nsfs_opendir(path=\"%s\", fi=0x%08x)\n",
     path, fi);
