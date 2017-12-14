@@ -819,6 +819,42 @@ int sfs_rmdir(const char *path){
     return -1;
   }
   
+  int i = strlen(path)-1;
+  if(path[i]=='/')
+    i--;
+  for(i=i; i>=0; i--){
+    if(path[i]=='/')
+      break;
+  }
+  i--;
+
+  if(i>=0){ //inside another directory
+    char* parentPath = malloc(i+1);
+    parentPath[i] = '\0';
+    int parentNum = getBlock(parentPath);
+    if(parentNum == -1){  //invalid path
+      free(newBlock);
+      free(parentPath);
+      return -1;
+    }
+    block* parentBlock = malloc(sizeof(block));
+    block_read(parentNum, parentBlock);
+    int j;
+    for(j=0; j<parentBlock->s.st_blocks; j++){
+      if(parentBlock->p[j] == newBlockNum)
+        break;
+    }
+    for(j=j; j<parentBlock->s.st_blocks-1; j++){
+      parentBlock->p[j] = parentBlock->p[j+1];
+    }
+    parentBlock->p[j] = -1;
+    parentBlock->s.st_blocks--;
+    block_write(parentNum, parentBlock);
+
+    free(parentBlock);
+    free(parentPath);
+  }
+
   newBlock->type=-1;
   block_write(newBlockNum, newBlock);
 
