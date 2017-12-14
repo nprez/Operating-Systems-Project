@@ -8,14 +8,14 @@ There is a set file size of 16MB, therefore more than 16MB cannot be written to 
 
 Structs:
 Every inode/block struct keeps track of its: 
-Int type			[-1, error; 0, directory; and 1 file]
-struct stat s		(st_uid, st_gid, mode, etc.)
-int p[BlockArraySize] 	(Array of links, if a directory)
-char path[255]		(Given Name/Path)
+Int type		[-1, error; 0, directory; and 1 file]
+struct stat s		[st_uid, st_gid, mode, etc.]
+int p[BlockArraySize] 	[Array of links, if a directory]
+char path[255]		[Given Name/Path]
 
 Every data_block struct keeps track of its:
 	Int type 				[-1, error; 2, data]
-	Int size					[Amount of data used]
+	Int size				[Amount of data used]
 	char data[512-(2*sizeof(int))]		[The data itself]
 
 Methods: 
