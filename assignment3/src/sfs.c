@@ -676,6 +676,7 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
   log_msg("\nsfs_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
   int writtenSoFar = 0;
+  int writtenPrev = 0;
 
   if(offset<0)  //invalid offset
     return -1;
@@ -692,7 +693,31 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
 
   int startBlock = offset/DataPerBlock;
 
-  //fill in previous blocks***********
+
+  if(b->s.st_blocks<=startBlock){ //offset beyond end of file
+    free(b);
+    return -1;
+  }
+  /*
+  //fill in previous blocks
+  while(b->s.st_blocks<=startBlock && b->s.st_blocks<=BlockArraySize){
+    int tempNum = b->p[b->s.st_blocks-1];
+    data_block* temp = malloc(sizeof(data_block));
+    block_read(tempNum, temp);
+    //fill temp with zeroes***********
+    block_write(tempNum, temp);
+    free(temp);
+    block_write(bNum, b);
+    b->s.st_blocks++;
+    //look for a new temp*************
+  }
+  if(b->s.st_blocks>BlockArraySize){
+    b->s.st_blocks--;
+    block_write(bNum, b);
+  }
+  else{ //setup startBlock************
+
+  }*/
 
   int dNum = b->p[startBlock];
   data_block* d = malloc(sizeof(data_block));
