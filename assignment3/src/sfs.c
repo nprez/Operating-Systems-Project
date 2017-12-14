@@ -68,7 +68,7 @@ typedef struct block_{
 
 typedef struct data_block_{
   int type; //-1 = error; 2 = data
-  int size; //amonut of data used
+  int size; //amount of data used
   char data[512-(2*sizeof(int))];
 } data_block;
 
@@ -377,7 +377,7 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   free(name);
 
   free(newBlock);
-    
+  
   return retstat;
 }
 
@@ -578,32 +578,74 @@ int sfs_release(const char *path, struct fuse_file_info *fi){
 int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi){
   log_msg("\nsfs_read(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
-  int retstat = size;
 
-  block* newBlock = getBlock(path);
-
-  if(newBlock->type != 1)
+  int newBlockNum = getBlock(path);
+  if(newBlockNum == -1){  //invalid path
     return -1;
+  }
+  block* newBlock = malloc(sizeof(block));
+  block_read(newBlockNum, newBlock);
+
+  if(newBlock->type != 1){  //not a file
+    free(newBlock);
+    return -1;
+  }
 
   int i;
   int prevSizes = 0;
-  for(i = 0; i < newBlock->s.st_blocks; i++){
-    if(offset < prevSizes + strlen(newBlock->p[i]->data))
+  int start = 0;
+
+  for(i = 0; i < newBlock->s.st_blocks; i++){ //find first data block to read
+    data_block* d = malloc(sizeof(data_block));
+    block_read(newBlock->p[i], d);
+    if(offset <= prevSizes){
+      if(offset == prevSizes) //exact match
+        start = 0;
+      else{ //went too far
+        start = DataPerBlock - (prevSizes - offset);
+        i--;
+      }
+      free(d);
       break;
-    prevSizes += strlen(newBlock->p[i]->data);
-  }
-  int j;
-  for(j = 0; j < size; j++){
-    if(strlen(newBlock->p[i]->data) == j+offset-prevSizes){
-      if(i+1 == newBlock->s.st_blocks || newBlocks->p[i+1]->type == -1)
-        return 0;
-      prevSizes += strlen(newBlock->p[i]->data);
-      i++;
     }
-    buf[j] = newBlock->p[i]->data[j + (offset - prevSizes)];
+    prevSizes += DataPerBlock;
+    free(d);
   }
-  retstat = size;
-  return retstat;
+
+  int count = 0;
+  while(count<size){
+    if(i==newBlock->s.st_blocks) //wasn't enough data
+      break;
+
+    int dNum = newBlock->p[i];
+    data_block* d = malloc(sizeof(data_block));
+    block_read(dNum, d);
+    int newAmountPossible = d->size-start; //amount of data left in block
+    int newAmountTarget = size-count; //amount of data we're trying to get
+    if(newAmountTarget>DataPerBlock)
+      newAmountTarget = DataPerBlock;
+
+    int end = (newAmountPossible <= newAmountTarget)? newAmountPossible:newAmountTarget;
+    end+=start;
+
+    int j;
+    for(j=start; j < end; j++){
+      buf[count] = d->data[j];
+    }
+    free(d);
+    start = 0;
+    i++;
+    count+=(j-start);
+  }
+
+  //fill rest with 0s
+  while(count<size){
+    buf[count] = 0;
+    count++;
+  }
+
+  free(newBlock);
+  return count;
 }
 
 /** Write data to an open file
