@@ -583,10 +583,13 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
   log_msg("\nsfs_read(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
 
-  int newBlockNum = getBlock(path);
-  if(newBlockNum == -1){  //invalid path
+  if(offset<0)  //invalid offset
     return -1;
-  }
+
+  int newBlockNum = getBlock(path);
+  if(newBlockNum == -1)  //invalid path
+    return -1;
+
   block* newBlock = malloc(sizeof(block));
   block_read(newBlockNum, newBlock);
 
@@ -664,22 +667,43 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
        struct fuse_file_info *fi){
   log_msg("\nsfs_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
     path, buf, size, offset, fi);
-  int retstat = size;
+  int writtenSoFar = 0;
 
-  block* b = getBlock(path);
-  if(b==NULL || b->type!=1)
+  if(offset<0)  //invalid offset
     return -1;
 
-  data_block* d = (data_block*)(b->p[b->s.st_blocks-1]);
-  if(DataPerBlock-d->size>=size){
+  int bNum = getBlock(path);
+  if(bNum==-1)  //invalid path
+    return -1;
+  block* b = malloc(sizeof(block));
+  block_read(bNum, b);
+  if(b->type!=1){  //not a file
+    free(b);
+    return -1;
+  }
+
+  int startBlock = offset/DataPerBlock;
+
+  //fill in previous blocks***********
+
+  int dNum = b->p[startBlock];
+  data_block* d = malloc(sizeof(data_block));
+  block_read(dNum, d);
+
+  if(DataPerBlock-d->size>=size){ //add to last block
     int i;
     for(i=0; i<size; i++){
       d->data[d->size+i] = buf[i];
     }
     d->size+=size;
+    block_write(dNum, d);
   }
-  else{
+  else{ //add to new block(s)
     int numNewBlocks = (size-(DataPerBlock-d->size))/(DataPerBlock);
+    double temp = (size-(DataPerBlock-d->size))/((double) DataPerBlock);
+    if(numNewBlocks != temp)
+      numNewBlocks++;
+
     int count = 0;
     int newDataBlockNums[numNewBlocks];
     int i;
@@ -695,13 +719,45 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
         break;
     }
 
-    if(count<numNewBlocks)
-      return -1;
+    if(count<numNewBlocks) //not enough data blocks for the write
+      numNewBlocks = count;
 
-    //actual work
+    //write some into current block
+    int leftInBlock = DataPerBlock-d->size;
+    i=0;
+    while(leftInBlock>0){
+      d->data[i] = buf[writtenSoFar];
+      i++;
+      writtenSoFar++;
+      d->size++;
+      leftInBlock--;
+    }
+    block_write(dNum, d);
+    //write rest into new blocks
+    for(i=0; i<numNewBlocks; i++){
+      if(b->s.st_blocks == BlockArraySize) //file out of blocks
+        break;
+
+      b->s.st_blocks++;
+      b->p[b->s.st_blocks-1] = newDataBlockNums[i];
+      block_write(bNum, b);
+      block_read(newDataBlockNums[i], d);
+      d->type = 2;
+      d->size = 0;
+      int end = DataPerBlock < (size - writtenSoFar) ? DataPerBlock:(size - writtenSoFar);
+      int j;
+      for(j=0; j<end; j++){
+        d->data[j] = buf[writtenSoFar];
+        writtenSoFar++;
+        d->size++;
+      }
+      block_write(newDataBlockNums[i], d);
+    }
   }
 
-  return retstat;
+  free(d);
+  free(b);
+  return writtenSoFar;
 }
 
 /** Create a directory */
