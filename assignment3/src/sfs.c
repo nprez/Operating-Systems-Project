@@ -176,7 +176,7 @@ void *sfs_init(struct fuse_conn_info *conn){
   newBlock->path[0] = '\0';
   newBlock->s.st_dev = 0;
   newBlock->s.st_ino = 0;
-  newBlock->s.st_mode = 0;
+  newBlock->s.st_mode = S_IFREG;
   newBlock->s.st_nlink = 0;
   newBlock->s.st_uid = 0;
   newBlock->s.st_gid = 0;
@@ -347,7 +347,7 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
 
   newBlock->s.st_dev = exampleBuf->st_dev;
   newBlock->s.st_ino = exampleBuf->st_ino;
-  newBlock->s.st_mode= mode;
+  newBlock->s.st_mode= mode | S_IFREG;
   newBlock->s.st_nlink = 1;
   newBlock->s.st_uid = exampleBuf->st_uid;
   newBlock->s.st_gid = exampleBuf->st_gid;
@@ -856,7 +856,7 @@ int sfs_mkdir(const char *path, mode_t mode){
 
   b->s.st_dev = exampleBuf->st_dev;
   b->s.st_ino = exampleBuf->st_ino;
-  b->s.st_mode= mode;
+  b->s.st_mode= mode | S_IFREG;
   b->s.st_nlink = 1;
   b->s.st_uid = exampleBuf->st_uid;
   b->s.st_gid = exampleBuf->st_gid;
