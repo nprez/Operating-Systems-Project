@@ -176,7 +176,7 @@ void *sfs_init(struct fuse_conn_info *conn){
   newBlock->path[0] = '\0';
   newBlock->s.st_dev = 0;
   newBlock->s.st_ino = 0;
-  newBlock->s.st_mode = 0;
+  newBlock->s.st_mode = S_IFREG;
   newBlock->s.st_nlink = 0;
   newBlock->s.st_uid = 0;
   newBlock->s.st_gid = 0;
