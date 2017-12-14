@@ -34,6 +34,7 @@
 
 #define BlockSize 512
 #define BlockArraySize (512-(sizeof(int)+255+sizeof(struct stat)))/sizeof(struct block_*)
+#define DataPerBlock (512-(2*sizeof(int)))
 #define FileSize 16777216  //16MB
 
 struct sfs_state* sfs_data;
@@ -281,10 +282,11 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   int retstat = 0;
 
   int i;
+  block* b;
   for(i=0; i<(FileSize/BlockSize); i++){
     char buf[BlockSize];
     block_read(i, (void*) buf);
-    block* b = (block*)buf;
+    b = (block*)buf;
     if(b->type==-1){
       b->type=1;
 
@@ -326,6 +328,8 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
   if(i==(FileSize/BlockSize)){
     return -1;
   }
+
+  block_write(i, b);
     
   return retstat;
 }
@@ -496,7 +500,7 @@ int sfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse
   for(j = 0; j < size; j++){
     if(strlen(newBlock->p[i]->data) == j+offset-prevSizes){
       if(i+1 == newBlock->s.st_blocks || newBlocks->p[i+1]->type == -1)
-	return 0;
+        return 0;
       prevSizes += strlen(newBlock->p[i]->data);
       i++;
     }
@@ -520,6 +524,41 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
     path, buf, size, offset, fi);
   int retstat = size;
 
+  block* b = getBlock(path);
+  if(b==NULL || b->type!=1)
+    return -1;
+
+  data_block* d = (data_block*)(b->p[b->s.st_blocks-1]);
+  if(DataPerBlock-d->size>=size){
+    int i;
+    for(i=0; i<size; i++){
+      d->data[d->size+i] = buf[i];
+    }
+    d->size+=size;
+  }
+  else{
+    int numNewBlocks = (size-(DataPerBlock-d->size))/(DataPerBlock);
+    int count = 0;
+    int newDataBlockNums[numNewBlocks];
+    int i;
+    for(i=0; i<(FileSize/BlockSize); i++){
+      data_block* temp = malloc(sizeof(data_block));
+      block_read(i, temp);
+      if(temp->type == -1){
+        newDataBlockNums[count] = i;
+        count++;
+      }
+      free(temp);
+      if(count==numNewBlocks)
+        break;
+    }
+
+    if(count<numNewBlocks)
+      return -1;
+
+    //actual work
+  }
+
   return retstat;
 }
 
@@ -529,10 +568,33 @@ int sfs_mkdir(const char *path, mode_t mode){
   log_msg("\nsfs_mkdir(path=\"%s\", mode=0%3o)\n",
     path, mode);
   int retstat = 0;
-
-  block* directoryBlock = (block*)malloc(sizeof(block));
   
+  //block* directoryBlock = (block*)malloc(sizeof(block));
+  
+  for(i=0; i<(FileSize/BlockSize); i++){
+    char buf[BlockSize];
+    block_read(i, (void*) buf);
+    block* b = (block*)buf;
+    if(b->type==-1){
+      b->type=0;
 
+      b->s.st_dev = exampleBuf->st_dev;
+      b->s.st_ino = exampleBuf->st_ino;
+      b->s.st_mode= mode;
+      b->s.st_nlink = 1;
+      b->s.st_uid = exampleBuf->st_uid;
+      b->s.st_gid = exampleBuf->st_gid;
+      b->s.st_rdev = exampleBuf->st_rdev;
+      b->s.st_size = 0;
+      time_t t = time(NULL);
+      b->s.st_atime = t;
+      b->s.st_mtime = t;
+      b->s.st_ctime = t;
+      b->s.st_blksize = 512;
+      b->s.st_blocks = 0;
+    }
+    
+    
   return retstat;
 }
 
@@ -543,8 +605,14 @@ int sfs_rmdir(const char *path){
     path);
   int retstat = 0;
 
+  block* newBlock = getBlock(path);
+  
+  //Still needs to find children and check to see if they DNE
+  
+  newBlock->type=-1;
   return retstat;
 }
+
 
 
 /** Open directory
