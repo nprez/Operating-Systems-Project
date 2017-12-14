@@ -870,12 +870,34 @@ int sfs_rmdir(const char *path){
  * Introduced in version 2.3
  */
 
-//just do this and not mkdir and rmdir
 int sfs_opendir(const char *path, struct fuse_file_info *fi){
   log_msg("\nsfs_opendir(path=\"%s\", fi=0x%08x)\n",
     path, fi);
   int retstat = 0;
 
+  int retNum = getBlock(path);
+  if(retNum == -1){
+    return -1;
+  }
+
+  block* ret = malloc(sizeof(block));
+  block_read(retNum, ret);
+
+  if(ret->type!=0){
+    free(ret);
+    return -1;
+  }
+  
+//Get Flags from File handler, upon failure/error return -1
+  int flags = fcntl(fi->fh, F_GETFL);
+  
+  if(flags == -1){
+    free(ret);
+    return -1;
+  }
+
+  free(ret);
+  
   return retstat;
 }
 
@@ -939,7 +961,20 @@ int sfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
  */
 int sfs_releasedir(const char *path, struct fuse_file_info *fi){
   int retstat = 0;
+  
+  int retNum = getBlock(path);
+  if(retNum == -1){
+    return -1;
+  }
 
+  block* ret = malloc(sizeof(block));
+  block_read(retNum, ret);
+  if(ret->type!=0){
+    free(ret);
+    return -1;
+  }
+
+  free(ret);
   return retstat;
 }
 
