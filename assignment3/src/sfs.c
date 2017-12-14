@@ -527,6 +527,10 @@ int sfs_open(const char *path, struct fuse_file_info *fi){
     return -1;
   }
 
+  time_t t = time(NULL);
+  ret->s.st_ctime = t;
+  block_write(retNum, ret);
+
   free(ret);
   
   return retstat;
@@ -562,6 +566,10 @@ int sfs_release(const char *path, struct fuse_file_info *fi){
     free(ret);
     return -1;
   }
+
+  time_t t = time(NULL);
+  ret->s.st_ctime = t;
+  block_write(retNum, ret);
 
   free(ret);
 
@@ -944,13 +952,17 @@ int sfs_opendir(const char *path, struct fuse_file_info *fi){
     return -1;
   }
   
-//Get Flags from File handler, upon failure/error return -1
+  //Get Flags from File handler, upon failure/error return -1
   int flags = fcntl(fi->fh, F_GETFL);
   
   if(flags == -1){
     free(ret);
     return -1;
   }
+
+  time_t t = time(NULL);
+  ret->s.st_ctime = t;
+  block_write(retNum, ret);
 
   free(ret);
   
@@ -1029,6 +1041,10 @@ int sfs_releasedir(const char *path, struct fuse_file_info *fi){
     free(ret);
     return -1;
   }
+
+  time_t t = time(NULL);
+  ret->s.st_ctime = t;
+  block_write(retNum, ret);
 
   free(ret);
   return retstat;
