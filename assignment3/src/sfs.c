@@ -295,55 +295,88 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     path, mode, fi);
   int retstat = 0;
 
-  int i;
-  block* b;
-  char buf[BlockSize];
-  for(i=0; i<(FileSize/BlockSize); i++){
-    block_read(i, (void*) buf);
-    b = (block*)buf;
-    if(b->type==-1){
-      b->type=1;
+  int i = strlen(path)-1;
+  if(path[i]=='/')
+    i--;
+  for(i=i; i>=0; i--){
+    if(path[i]=='/')
+      break;
+  }
 
-      b->s.st_dev = exampleBuf->st_dev;
-      b->s.st_ino = exampleBuf->st_ino;
-      b->s.st_mode= mode;
-      b->s.st_nlink = 1;
-      b->s.st_uid = exampleBuf->st_uid;
-      b->s.st_gid = exampleBuf->st_gid;
-      b->s.st_rdev = exampleBuf->st_rdev;
-      b->s.st_size = 0;
-      time_t t = time(NULL);
-      b->s.st_atime = t;
-      b->s.st_mtime = t;
-      b->s.st_ctime = t;
-      b->s.st_blksize = 512;
-      b->s.st_blocks = 0;
-
-      char* name = malloc(strlen(path)+1);
-      name[strlen(path)] = '\0';
-      strcpy(name, path);
-      char* ptr = strchr(name, '/');
-      while(ptr!=NULL){
-        if(ptr==&(name[strlen(name)-1]))
-          break;
-        name = &(ptr[1]);
-        ptr = strchr(name, '/');
-      }
-      if(ptr==&(name[strlen(name)-1]))
-        name[strlen(name)-1] = '\0';
-
-      strcpy(b->path, name);
-
-      free(name);
-
+  //find an open block
+  int j;
+  block* newBlock = malloc(sizeof(block));
+  for(j=0; j<(FileSize/BlockSize); j++){
+    block_read(j, newBlock);
+    if(newBlock->type == -1){
       break;
     }
   }
-  if(i==(FileSize/BlockSize)){
+  if(j==(FileSize/BlockSize)){  //out of free blocks
+    free(newBlock);
     return -1;
   }
 
-  block_write(i, b);
+  if(i!=0){ //in a directory
+    //find parent block
+    char parentPath[i+1];
+    parentPath[i] = '\0';
+    for(i=i-1; i>=0; i--){
+      parentPath[i] = path[i];
+    }
+    int parentNum = getBlock(parentPath);
+    if(parentNum == -1){  //invalid path
+      free(newBlock);
+      return -1;
+    }
+    block* parentBlock = malloc(sizeof(block));
+    block_read(parentNum, parentBlock);
+    //add to children
+    parentBlock->s.st_blocks++;
+    parentBlock->p[parentBlock->s.st_blocks-1] = j;
+    block_write(parentNum, parentBlock);
+
+    free(parentBlock);
+  }
+
+  //setup new block
+  newBlock->type=1;
+
+  newBlock->s.st_dev = exampleBuf->st_dev;
+  newBlock->s.st_ino = exampleBuf->st_ino;
+  newBlock->s.st_mode= mode;
+  newBlock->s.st_nlink = 1;
+  newBlock->s.st_uid = exampleBuf->st_uid;
+  newBlock->s.st_gid = exampleBuf->st_gid;
+  newBlock->s.st_rdev = exampleBuf->st_rdev;
+  newBlock->s.st_size = 0;
+  time_t t = time(NULL);
+  newBlock->s.st_atime = t;
+  newBlock->s.st_mtime = t;
+  newBlock->s.st_ctime = t;
+  newBlock->s.st_blksize = 512;
+  newBlock->s.st_blocks = 0;
+
+  char* name = malloc(strlen(path)+1);
+  name[strlen(path)] = '\0';
+  strcpy(name, path);
+  char* ptr = strchr(name, '/');
+  while(ptr!=NULL){
+    if(ptr==&(name[strlen(name)-1]))
+      break;
+    name = &(ptr[1]);
+    ptr = strchr(name, '/');
+  }
+  if(ptr==&(name[strlen(name)-1]))
+    name[strlen(name)-1] = '\0';
+
+  strcpy(newBlock->path, name);
+
+  block_write(j, newBlock);
+
+  free(name);
+
+  free(newBlock);
     
   return retstat;
 }
