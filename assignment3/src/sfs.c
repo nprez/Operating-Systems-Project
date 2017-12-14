@@ -72,7 +72,6 @@ typedef struct data_block_{
   char data[512-(2*sizeof(int))];
 } data_block;
 
-
 struct stat* exampleBuf;
 //int lstat(const char *pathname, struct stat *statbuf);
 
@@ -81,7 +80,6 @@ struct stat* exampleBuf;
 // Prototypes for all these functions, and the C-style comments,
 // come indirectly from /usr/include/fuse.h
 //
-
 
 int getBlock(const char* path){
   block* newBlock = (block*)malloc(sizeof(block));
@@ -154,7 +152,6 @@ int getBlock(const char* path){
   free(newBlock);
   return blockNum;
 }
-
 
 /**
  * Initialize filesystem
@@ -302,6 +299,7 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     if(path[i]=='/')
       break;
   }
+  i--;
 
   //find an open block
   int j;
@@ -317,7 +315,7 @@ int sfs_create(const char *path, mode_t mode, struct fuse_file_info *fi){
     return -1;
   }
 
-  if(i!=0){ //in a directory
+  if(i>=0){ //in a directory
     //find parent block
     char parentPath[i+1];
     parentPath[i] = '\0';
@@ -528,6 +526,7 @@ int sfs_open(const char *path, struct fuse_file_info *fi){
   
   return retstat;
 }
+
 /** Release an open file
  *
  * Release is called when there are no more references to an open
@@ -700,42 +699,99 @@ int sfs_write(const char *path, const char *buf, size_t size, off_t offset,
   return retstat;
 }
 
-
 /** Create a directory */
 int sfs_mkdir(const char *path, mode_t mode){
   log_msg("\nsfs_mkdir(path=\"%s\", mode=0%3o)\n",
     path, mode);
   int retstat = 0;
   
-  //block* directoryBlock = (block*)malloc(sizeof(block));
-  
+  int i;
   for(i=0; i<(FileSize/BlockSize); i++){
-    char buf[BlockSize];
-    block_read(i, (void*) buf);
-    block* b = (block*)buf;
+    block* b = malloc(sizeof(block));
+    block_read(i, b);
     if(b->type==-1){
-      b->type=0;
-
-      b->s.st_dev = exampleBuf->st_dev;
-      b->s.st_ino = exampleBuf->st_ino;
-      b->s.st_mode= mode;
-      b->s.st_nlink = 1;
-      b->s.st_uid = exampleBuf->st_uid;
-      b->s.st_gid = exampleBuf->st_gid;
-      b->s.st_rdev = exampleBuf->st_rdev;
-      b->s.st_size = 0;
-      time_t t = time(NULL);
-      b->s.st_atime = t;
-      b->s.st_mtime = t;
-      b->s.st_ctime = t;
-      b->s.st_blksize = 512;
-      b->s.st_blocks = 0;
+      free(b);
+      break;
     }
-    
-    
+    free(b);
+  }
+  if(i==FileSize/BlockSize) //out of blocks
+    return -1;
+
+  int j = strlen(path)-1;
+  if(path[j]=='/')
+    j--;
+  for(j=j; j>=0; j--){
+    if(path[j]=='/')
+      break;
+  }
+  j--;
+  if(j>=0){  //inside another directory
+    //find parent
+    char* parentPath = malloc(j+1);
+    parentPath[j] = '\0';
+    for(j=j-1; j>=0; j--){
+      parentPath[j] = path[j];
+    }
+
+    int parentNum = getBlock(parentPath);
+    free(parentPath);
+    if(parentNum == -1)  //invalid path
+      return -1;
+
+    block* parentBlock = malloc(sizeof(block));
+    block_read(parentNum, parentBlock);
+    //set parent children
+    parentBlock->s.st_blocks++;
+    parentBlock->p[parentBlock->s.st_blocks-1] = i;
+
+    block_write(parentNum, parentBlock);
+
+    free(parentBlock);
+  }
+
+  //setup new block
+  block* b = malloc(sizeof(block));
+  block_read(i, b);
+
+  b->type=0;
+
+  b->s.st_dev = exampleBuf->st_dev;
+  b->s.st_ino = exampleBuf->st_ino;
+  b->s.st_mode= mode;
+  b->s.st_nlink = 1;
+  b->s.st_uid = exampleBuf->st_uid;
+  b->s.st_gid = exampleBuf->st_gid;
+  b->s.st_rdev = exampleBuf->st_rdev;
+  b->s.st_size = 0;
+  time_t t = time(NULL);
+  b->s.st_atime = t;
+  b->s.st_mtime = t;
+  b->s.st_ctime = t;
+  b->s.st_blksize = 512;
+  b->s.st_blocks = 0;
+
+  char* name = malloc(strlen(path)+1);
+  name[strlen(path)] = '\0';
+  strcpy(name, path);
+  char* ptr = strchr(name, '/');
+  while(ptr!=NULL){
+    if(ptr==&(name[strlen(name)-1]))
+      break;
+    name = &(ptr[1]);
+    ptr = strchr(name, '/');
+  }
+  if(ptr==&(name[strlen(name)-1]))
+    name[strlen(name)-1] = '\0';
+
+  strcpy(b->path, name);
+
+  block_write(i, b);
+
+  free(name);
+
   return retstat;
 }
-
 
 /** Remove a directory */
 int sfs_rmdir(const char *path){
@@ -760,8 +816,6 @@ int sfs_rmdir(const char *path){
   free(newBlock);
   return retstat;
 }
-
-
 
 /** Open directory
  *
