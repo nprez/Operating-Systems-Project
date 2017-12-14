@@ -20,7 +20,7 @@ Every data_block struct keeps track of its:
 
 Methods: 
 int getBlock(const char* path)
-Traverses through the data blocks, while simultaneously removing the slashes of the given const char* path, until the desired directory is reached and/or file is found. Returns -1 upon failure to find file/directory, else returns the block number is which the path name resides in. 
+Traverses through the data blocks, while simultaneously removing the slashes of the given const char* path, until the desired directory is reached and/or file is found. Returns -1 upon failure to find file/directory, else returns the block number in which the path name resides in. 
 
 void *sfs_init(struct fuse_conn_info *conn)
 Initializes the filesystem by open the diskfile and initializing all blocks/inodes
