@@ -743,11 +743,21 @@ int sfs_rmdir(const char *path){
     path);
   int retstat = 0;
 
-  block* newBlock = getBlock(path);
-  
-  //Still needs to find children and check to see if they DNE
+  int newBlockNum = getBlock(path);
+  if(newBlockNum == -1) //invalid path
+    return -1;
+
+  block* newBlock = malloc(sizeof(block));
+  block_read(newBlockNum, newBlock);
+  if(newBlock->type != 2 || newBlock->s.st_blocks != 0){  //not a directory or not empty
+    free(newBlock);
+    return -1;
+  }
   
   newBlock->type=-1;
+  block_write(newBlockNum, newBlock);
+
+  free(newBlock);
   return retstat;
 }
 
